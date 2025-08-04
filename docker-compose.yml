@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend/BlogPlatform.Api
+      dockerfile: Dockerfile
+    ports:
+      - "12000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/blog.db
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - postgres
+    networks:
+      - blog-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: blogplatform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - blog-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "12001:80"
+    depends_on:
+      - backend
+    networks:
+      - blog-network
+
+volumes:
+  postgres_data:
+
+networks:
+  blog-network:
+    driver: bridge

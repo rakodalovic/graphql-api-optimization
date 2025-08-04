@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Blog Platform</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@apollo/client@3.8.8/apollo-client.min.js"></script>
+    <script src="https://unpkg.com/graphql@16.8.1/index.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useContext, createContext } = React;
+        const { ApolloClient, InMemoryCache, ApolloProvider, gql, useQuery, useMutation, useSubscription } = window.apolloClient;
+
+        // GraphQL Client Setup
+        const client = new ApolloClient({
+            uri: 'http://localhost:12000/graphql',
+            cache: new InMemoryCache(),
+            defaultOptions: {
+                watchQuery: {
+                    errorPolicy: 'all'
+                },
+                query: {
+                    errorPolicy: 'all'
+                }
+            }
+        });
+
+        // Auth Context
+        const AuthContext = createContext();
+
+        const AuthProvider = ({ children }) => {
+            const [token, setToken] = useState(localStorage.getItem('token'));
+            const [user, setUser] = useState(null);
+
+            useEffect(() => {
+                if (token) {
+                    // Decode JWT to get user info (simplified)
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        setUser({
+                            id: payload.nameid,
+                            username: payload.unique_name,
+                            role: payload.role
+                        });
+                    } catch (e) {
+                        setToken(null);
+                        localStorage.removeItem('token');
+                    }
+                }
+            }, [token]);
+
+            const login = (newToken, userData) => {
+                setToken(newToken);
+                setUser(userData);
+                localStorage.setItem('token', newToken);
+            };
+
+            const logout = () => {
+                setToken(null);
+                setUser(null);
+                localStorage.removeItem('token');
+            };
+
+            return (
+                <AuthContext.Provider value={{ token, user, login, logout }}>
+                    {children}
+                </AuthContext.Provider>
+            );
+        };
+
+        const useAuth = () => useContext(AuthContext);
+
+        // GraphQL Queries
+        const GET_POSTS = gql`
+            query GetPosts {
+                posts {
+                    id
+                    title
+                    summary
+                    author {
+                        username
+                    }
+                    category {
+                        name
+                    }
+                    publishedAt
+                }
+            }
+        `;
+
+        const GET_POST = gql`
+            query GetPost($id: Int!) {
+                post(id: $id) {
+                    id
+                    title
+                    content
+                    summary
+                    author {
+                        username
+                    }
+                    category {
+                        name
+                    }
+                    publishedAt
+                    comments(postId: $id) {
+                        id
+                        content
+                        user {
+                            username
+                        }
+                        createdAt
+                    }
+                }
+            }
+        `;
+
+        const GET_CATEGORIES = gql`
+            query GetCategories {
+                categories {
+                    id
+                    name
+                    description
+                }
+            }
+        `;
+
+        const LOGIN_MUTATION = gql`
+            mutation Login($username: String!, $password: String!) {
+                login(username: $username, password: $password) {
+                    token
+                    user {
+                        id
+                        username
+                        email
+                        role
+                    }
+                }
+            }
+        `;
+
+        const CREATE_POST_MUTATION = gql`
+            mutation CreatePost($input: CreatePostInput!) {
+                createPost(input: $input) {
+                    id
+                    title
+                    content
+                    summary
+                    isPublished
+                }
+            }
+        `;
+
+        const CREATE_COMMENT_MUTATION = gql`
+            mutation CreateComment($input: CreateCommentInput!) {
+                createComment(input: $input) {
+                    id
+                    content
+                    user {
+                        username
+                    }
+                    createdAt
+                }
+            }
+        `;
+
+        // Components
+        const LoadingSpinner = () => (
+            <div className="flex justify-center items-center p-8">
+                <div className="loading-spinner"></div>
+            </div>
+        );
+
+        const ErrorMessage = ({ message }) => (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {message}
+            </div>
+        );
+
+        const Header = () => {
+            const { user, logout } = useAuth();
+
+            return (
+                <header className="bg-blue-600 text-white shadow-lg">
+                    <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                        <h1 className="text-2xl font-bold">GraphQL Blog Platform</h1>
+                        <nav className="flex items-center space-x-4">
+                            {user ? (
+                                <>
+                                    <span>Welcome, {user.username}!</span>
+                                    <button
+                                        onClick={logout}
+                                        className="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded"
+                                    >
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <span>Not logged in</span>
+                            )}
+                        </nav>
+                    </div>
+                </header>
+            );
+        };
+
+        const LoginForm = () => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const { login } = useAuth();
+
+            const [loginMutation, { loading }] = useMutation(LOGIN_MUTATION, {
+                onCompleted: (data) => {
+                    login(data.login.token, data.login.user);
+                    setError('');
+                },
+                onError: (error) => {
+                    setError(error.message);
+                }
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                loginMutation({ variables: { username, password } });
+            };
+
+            return (
+                <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-2xl font-bold mb-4">Login</h2>
+                    {error && <ErrorMessage message={error} />}
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Username
+                            </label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                required
+                            />
+                        </div>
+                        <div className="mb-6">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                        >
+                            {loading ? 'Logging in...' : 'Login'}
+                        </button>
+                    </form>
+                    <div className="mt-4 text-sm text-gray-600">
+                        <p>Demo accounts:</p>
+                        <p>Admin: admin / password</p>
+                        <p>Author: author1 / password</p>
+                        <p>User: user1 / password</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const PostCard = ({ post, onClick }) => (
+            <div 
+                className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => onClick(post.id)}
+            >
+                <h3 className="text-xl font-bold mb-2">{post.title}</h3>
+                <p className="text-gray-600 mb-4">{post.summary}</p>
+                <div className="flex justify-between items-center text-sm text-gray-500">
+                    <span>By {post.author.username}</span>
+                    <span>{post.category.name}</span>
+                    <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
+                </div>
+            </div>
+        );
+
+        const PostsList = ({ onPostClick }) => {
+            const { loading, error, data } = useQuery(GET_POSTS);
+
+            if (loading) return <LoadingSpinner />;
+            if (error) return <ErrorMessage message={error.message} />;
+
+            return (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {data.posts.map(post => (
+                        <PostCard 
+                            key={post.id} 
+                            post={post} 
+                            onClick={onPostClick}
+                        />
+                    ))}
+                </div>
+            );
+        };
+
+        const PostDetail = ({ postId, onBack }) => {
+            const [newComment, setNewComment] = useState('');
+            const { user } = useAuth();
+            
+            const { loading, error, data } = useQuery(GET_POST, {
+                variables: { id: parseInt(postId) }
+            });
+
+            const [createComment, { loading: commentLoading }] = useMutation(CREATE_COMMENT_MUTATION, {
+                refetchQueries: [{ query: GET_POST, variables: { id: parseInt(postId) } }],
+                onCompleted: () => setNewComment('')
+            });
+
+            const handleCommentSubmit = (e) => {
+                e.preventDefault();
+                if (!user) return;
+                
+                createComment({
+                    variables: {
+                        input: {
+                            content: newComment,
+                            postId: parseInt(postId)
+                        }
+                    }
+                });
+            };
+
+            if (loading) return <LoadingSpinner />;
+            if (error) return <ErrorMessage message={error.message} />;
+            if (!data.post) return <ErrorMessage message="Post not found" />;
+
+            const post = data.post;
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <button
+                        onClick={onBack}
+                        className="mb-4 bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                    >
+                        ← Back to Posts
+                    </button>
+                    
+                    <article className="bg-white rounded-lg shadow-md p-8">
+                        <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-6">
+                            <span>By {post.author.username}</span>
+                            <span>{post.category.name}</span>
+                            <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="prose max-w-none mb-8">
+                            {post.content.split('\n').map((paragraph, index) => (
+                                <p key={index} className="mb-4">{paragraph}</p>
+                            ))}
+                        </div>
+                    </article>
+
+                    <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+                        <h3 className="text-xl font-bold mb-4">Comments ({post.comments.length})</h3>
+                        
+                        {user && (
+                            <form onSubmit={handleCommentSubmit} className="mb-6">
+                                <textarea
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Write a comment..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                    rows="3"
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={commentLoading}
+                                    className="mt-2 bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+                                >
+                                    {commentLoading ? 'Posting...' : 'Post Comment'}
+                                </button>
+                            </form>
+                        )}
+
+                        <div className="space-y-4">
+                            {post.comments.map(comment => (
+                                <div key={comment.id} className="border-l-4 border-blue-500 pl-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="font-semibold">{comment.user.username}</span>
+                                        <span className="text-sm text-gray-500">
+                                            {new Date(comment.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <p className="text-gray-700">{comment.content}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CreatePostForm = ({ onCancel, onSuccess }) => {
+            const [title, setTitle] = useState('');
+            const [content, setContent] = useState('');
+            const [summary, setSummary] = useState('');
+            const [categoryId, setCategoryId] = useState('');
+            const [isPublished, setIsPublished] = useState(false);
+
+            const { loading: categoriesLoading, data: categoriesData } = useQuery(GET_CATEGORIES);
+            
+            const [createPost, { loading, error }] = useMutation(CREATE_POST_MUTATION, {
+                refetchQueries: [{ query: GET_POSTS }],
+                onCompleted: () => {
+                    onSuccess();
+                }
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                createPost({
+                    variables: {
+                        input: {
+                            title,
+                            content,
+                            summary,
+                            categoryId: parseInt(categoryId),
+                            isPublished
+                        }
+                    }
+                });
+            };
+
+            if (categoriesLoading) return <LoadingSpinner />;
+
+            return (
+                <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-2xl font-bold mb-4">Create New Post</h2>
+                    {error && <ErrorMessage message={error.message} />}
+                    
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Title
+                            </label>
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                required
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Summary
+                            </label>
+                            <input
+                                type="text"
+                                value={summary}
+                                onChange={(e) => setSummary(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Category
+                            </label>
+                            <select
+                                value={categoryId}
+                                onChange={(e) => setCategoryId(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                required
+                            >
+                                <option value="">Select a category</option>
+                                {categoriesData?.categories.map(category => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Content
+                            </label>
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                                rows="10"
+                                required
+                            />
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={isPublished}
+                                    onChange={(e) => setIsPublished(e.target.checked)}
+                                    className="mr-2"
+                                />
+                                <span className="text-gray-700">Publish immediately</span>
+                            </label>
+                        </div>
+
+                        <div className="flex space-x-4">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                            >
+                                {loading ? 'Creating...' : 'Create Post'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentView, setCurrentView] = useState('posts');
+            const [selectedPostId, setSelectedPostId] = useState(null);
+            const { user } = useAuth();
+
+            const handlePostClick = (postId) => {
+                setSelectedPostId(postId);
+                setCurrentView('post-detail');
+            };
+
+            const handleBackToPosts = () => {
+                setCurrentView('posts');
+                setSelectedPostId(null);
+            };
+
+            const handleCreatePost = () => {
+                setCurrentView('create-post');
+            };
+
+            const handleCreatePostSuccess = () => {
+                setCurrentView('posts');
+            };
+
+            const canCreatePost = user && (user.role === 'Admin' || user.role === 'Author');
+
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    <Header />
+                    
+                    <main className="container mx-auto px-4 py-8">
+                        {!user ? (
+                            <LoginForm />
+                        ) : (
+                            <>
+                                {currentView === 'posts' && (
+                                    <>
+                                        <div className="flex justify-between items-center mb-8">
+                                            <h2 className="text-3xl font-bold">Latest Posts</h2>
+                                            {canCreatePost && (
+                                                <button
+                                                    onClick={handleCreatePost}
+                                                    className="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                                >
+                                                    Create New Post
+                                                </button>
+                                            )}
+                                        </div>
+                                        <PostsList onPostClick={handlePostClick} />
+                                    </>
+                                )}
+                                
+                                {currentView === 'post-detail' && (
+                                    <PostDetail 
+                                        postId={selectedPostId} 
+                                        onBack={handleBackToPosts}
+                                    />
+                                )}
+                                
+                                {currentView === 'create-post' && (
+                                    <CreatePostForm 
+                                        onCancel={handleBackToPosts}
+                                        onSuccess={handleCreatePostSuccess}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ApolloProvider client={client}>
+                <AuthProvider>
+                    <App />
+                </AuthProvider>
+            </ApolloProvider>
+        );
+    </script>
+</body>
+</html>

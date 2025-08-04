@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Blog Platform</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+
+        // Simple GraphQL client
+        async function graphqlRequest(query, variables = {}) {
+            try {
+                const response = await fetch('http://localhost:12000/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query, variables })
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('GraphQL request failed:', error);
+                return { errors: [{ message: error.message }] };
+            }
+        }
+
+        // Components
+        function LoadingSpinner() {
+            return React.createElement('div', { className: 'loading-spinner' });
+        }
+
+        function ErrorMessage({ message }) {
+            return React.createElement('div', {
+                className: 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4'
+            }, message);
+        }
+
+        function PostCard({ post }) {
+            return React.createElement('div', {
+                className: 'bg-white rounded-lg shadow-md p-6 mb-6'
+            }, [
+                React.createElement('h2', {
+                    key: 'title',
+                    className: 'text-2xl font-bold text-gray-900 mb-2'
+                }, post.title),
+                React.createElement('p', {
+                    key: 'summary',
+                    className: 'text-gray-600 mb-4'
+                }, post.summary),
+                React.createElement('div', {
+                    key: 'meta',
+                    className: 'flex justify-between items-center text-sm text-gray-500'
+                }, [
+                    React.createElement('span', { key: 'author' }, `By ${post.author.username}`),
+                    React.createElement('span', { key: 'date' }, new Date(post.publishedAt).toLocaleDateString())
+                ])
+            ]);
+        }
+
+        function PostList() {
+            const [posts, setPosts] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
+            useEffect(() => {
+                async function fetchPosts() {
+                    const query = `
+                        query {
+                            posts {
+                                id
+                                title
+                                summary
+                                publishedAt
+                                author {
+                                    username
+                                }
+                            }
+                        }
+                    `;
+                    
+                    const result = await graphqlRequest(query);
+                    
+                    if (result.errors) {
+                        setError(result.errors[0].message);
+                    } else {
+                        setPosts(result.data.posts);
+                    }
+                    setLoading(false);
+                }
+
+                fetchPosts();
+            }, []);
+
+            if (loading) {
+                return React.createElement('div', {
+                    className: 'flex justify-center items-center min-h-64'
+                }, React.createElement(LoadingSpinner));
+            }
+
+            if (error) {
+                return React.createElement(ErrorMessage, { message: error });
+            }
+
+            return React.createElement('div', {
+                className: 'space-y-6'
+            }, posts.map(post => 
+                React.createElement(PostCard, { key: post.id, post })
+            ));
+        }
+
+        function Header() {
+            return React.createElement('header', {
+                className: 'bg-blue-600 text-white shadow-lg'
+            }, React.createElement('div', {
+                className: 'container mx-auto px-4 py-6'
+            }, [
+                React.createElement('h1', {
+                    key: 'title',
+                    className: 'text-3xl font-bold'
+                }, 'GraphQL Blog Platform'),
+                React.createElement('p', {
+                    key: 'subtitle',
+                    className: 'text-blue-100 mt-2'
+                }, 'Demonstrating GraphQL optimization benefits over REST APIs')
+            ]));
+        }
+
+        function App() {
+            return React.createElement('div', {
+                className: 'min-h-screen bg-gray-100'
+            }, [
+                React.createElement(Header, { key: 'header' }),
+                React.createElement('main', {
+                    key: 'main',
+                    className: 'container mx-auto px-4 py-8'
+                }, [
+                    React.createElement('div', {
+                        key: 'intro',
+                        className: 'bg-white rounded-lg shadow-md p-6 mb-8'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-2xl font-bold text-gray-900 mb-4'
+                        }, 'Welcome to the GraphQL Blog Platform'),
+                        React.createElement('p', {
+                            key: 'description',
+                            className: 'text-gray-600'
+                        }, 'This application demonstrates the optimization benefits of GraphQL over REST APIs. The backend is built with ASP.NET Core and HotChocolate, showcasing features like efficient data fetching, batching, and real-time subscriptions.')
+                    ]),
+                    React.createElement(PostList, { key: 'posts' })
+                ])
+            ]);
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
