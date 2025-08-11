@@ -1,6 +1,9 @@
+using GraphQLApi.Data;
+using GraphQLApi.Data.Seed;
 using GraphQLApi.GraphQL;
 using HotChocolate.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System.Text.Json;
 
@@ -24,6 +27,27 @@ try
     // Add services to the container
     builder.Services.AddControllers();
 
+    // Configure Entity Framework
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // Use In-Memory database for development
+            options.UseInMemoryDatabase("GraphQLApiDb");
+        }
+        else
+        {
+            // Use SQL Server for production
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+                "Server=(localdb)\\mssqllocaldb;Database=GraphQLApiDb;Trusted_Connection=true;MultipleActiveResultSets=true"
+            );
+        }
+        
+        options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+        options.EnableDetailedErrors(builder.Environment.IsDevelopment());
+    });
+
     // Configure CORS
     builder.Services.AddCors(options =>
     {
@@ -38,7 +62,8 @@ try
 
     // Add Health Checks
     builder.Services.AddHealthChecks()
-        .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"));
+        .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"))
+        .AddDbContextCheck<ApplicationDbContext>("database");
 
     // Configure GraphQL with HotChocolate
     builder.Services
@@ -48,12 +73,34 @@ try
         .AddFiltering()
         .AddSorting()
         .AddProjections()
+        .RegisterDbContext<ApplicationDbContext>(DbContextKind.Pooled)
         .ModifyRequestOptions(opt =>
         {
             opt.IncludeExceptionDetails = builder.Environment.IsDevelopment();
         });
 
     var app = builder.Build();
+
+    // Ensure database is created and seeded
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        if (app.Environment.IsDevelopment())
+        {
+            // For in-memory database, ensure it's created
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            // For SQL Server, run migrations
+            await context.Database.MigrateAsync();
+        }
+
+        // Seed the database
+        await SeedData.SeedAsync(context);
+        Log.Information("Database seeded successfully");
+    }
 
     // Configure the HTTP request pipeline
     if (app.Environment.IsDevelopment())
