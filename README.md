@@ -1,252 +1,248 @@
-# GraphQL API with .NET 8 and HotChocolate
+# GraphQL API with SQLite Database
 
-A comprehensive .NET 8 Web API implementation with HotChocolate GraphQL Framework, featuring structured logging, health checks, and development-ready configuration.
+This project demonstrates a GraphQL API built with ASP.NET Core and Entity Framework Core, using SQLite as the database provider.
 
-## 🚀 Features
+## Features
 
-- ✅ .NET 8 Web API with HotChocolate GraphQL
-- ✅ Comprehensive GraphQL schema with Query and Mutation types
-- ✅ Structured logging with Serilog
-- ✅ Health check endpoints with detailed reporting
-- ✅ CORS configuration for frontend integration
-- ✅ Development environment with hot reload support
-- ✅ GraphQL IDE (Banana Cake Pop) integration
-- ✅ Environment-based configuration
+- ✅ **SQLite Database Configuration**: File-based SQLite database for simplicity
+- ✅ **Entity Framework Core Integration**: Comprehensive migrations and DbContext setup
+- ✅ **Foreign Key Constraints**: Properly configured and enabled for data integrity
+- ✅ **Comprehensive Seed Data**: Realistic test data with complex relationships
+- ✅ **GraphQL Integration**: HotChocolate GraphQL server with filtering, sorting, and projections
+- ✅ **Health Checks**: Database and application health monitoring
+- ✅ **Logging**: Structured logging with Serilog
 
-## 📦 NuGet Packages
+## Database Schema
 
-- **HotChocolate.AspNetCore** (13.9.0) - GraphQL server implementation
-- **HotChocolate.Data.EntityFramework** (13.9.0) - Entity Framework integration
-- **Serilog.AspNetCore** (8.0.0) - Structured logging
-- **Microsoft.AspNetCore.Diagnostics.HealthChecks** (2.2.0) - Health monitoring
-- **Serilog.Sinks.Console** (5.0.1) - Console logging output
-- **Serilog.Sinks.File** (5.0.0) - File logging output
+The application includes the following entities with complex relationships:
 
-## 🏗️ Project Structure
+### Core Entities
+- **Users**: User accounts with profiles and preferences
+- **Products**: Product catalog with variants and images
+- **Categories**: Hierarchical product categories
+- **Orders**: Order management with items and status history
+- **Reviews**: Product reviews with ratings and votes
+- **Carts**: Shopping cart functionality
+- **Payments**: Payment processing and history
+- **Notifications**: User notification system
+- **Tags**: Flexible tagging system for products, users, and orders
 
-```
-GraphQLApi/
-├── GraphQL/
-│   ├── Query.cs           # GraphQL query definitions
-│   └── Mutation.cs        # GraphQL mutation definitions
-├── Properties/
-│   └── launchSettings.json # Development launch configuration
-├── logs/                  # Serilog output directory
-├── Program.cs             # Application entry point and configuration
-├── appsettings.json       # Production configuration
-├── appsettings.Development.json # Development configuration
-├── GraphQLApi.csproj      # Project file
-├── global.json            # .NET SDK version specification
-├── test-api.sh           # API testing script
-└── README.md             # This file
-```
+### Key Relationships
+- Users → Orders (One-to-Many)
+- Products → Categories (Many-to-One)
+- Orders → OrderItems → Products (Many-to-Many through OrderItems)
+- Users → Reviews → Products (Many-to-Many through Reviews)
+- Products → ProductVariants (One-to-Many)
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
+- .NET 8.0 SDK
+- Entity Framework Core Tools
 
-- .NET 8.0 SDK or later
-- (Optional) jq for JSON formatting in test script
+### Installation
 
-### Running the Application
-
-1. **Clone and navigate to the project directory**
-   ```bash
-   cd GraphQLApi
-   ```
-
-2. **Restore dependencies**
+1. **Restore NuGet packages**:
    ```bash
    dotnet restore
    ```
 
-3. **Build the project**
+2. **Apply database migrations** (automatically done on startup):
    ```bash
-   dotnet build
+   dotnet ef database update
    ```
 
-4. **Run the application**
+3. **Run the application**:
    ```bash
    dotnet run
    ```
 
-   Or for development with specific URLs:
-   ```bash
-   dotnet run --urls "https://localhost:7000;http://localhost:5000"
-   ```
+The application will be available at:
+- **API**: http://localhost:5000
+- **GraphQL**: http://localhost:5000/graphql
+- **GraphQL Playground**: http://localhost:5000/graphql (in development mode)
+- **Health Checks**: http://localhost:5000/health
 
-5. **Access the GraphQL IDE**
-   Open your browser and navigate to: `http://localhost:5000/graphql/`
+## Database Configuration
 
-## 🌐 Available Endpoints
-
-| Endpoint | Description | Method |
-|----------|-------------|---------|
-| `/` | API information and status | GET |
-| `/graphql` | GraphQL API endpoint | POST |
-| `/graphql/` | GraphQL IDE (Banana Cake Pop) | GET |
-| `/health` | Detailed health check with JSON response | GET |
-| `/health/ready` | Readiness health check | GET |
-| `/health/live` | Liveness health check | GET |
-
-## 📊 GraphQL Schema
-
-### Queries
-
-- **`hello`**: Returns "Hello World"
-- **`greeting(name: String)`**: Returns personalized greeting
-- **`serverTime`**: Returns current server UTC time
-- **`version`**: Returns API version information
-
-### Mutations
-
-- **`echo(message: String!)`**: Echo mutation that returns the input message
-- **`calculate(a: Float!, b: Float!, operation: CalculationOperation!)`**: Performs basic calculations
-
-### Example Queries
-
-**Hello World Query:**
-```graphql
+### SQLite Connection String
+The SQLite database is configured in `appsettings.json`:
+```json
 {
-  hello
-}
-```
-
-**Personalized Greeting:**
-```graphql
-{
-  greeting(name: "Developer")
-}
-```
-
-**Version Information:**
-```graphql
-{
-  version {
-    version
-    environment
-    buildDate
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=graphql_api.db"
   }
 }
 ```
 
-**Echo Mutation:**
+### Foreign Key Constraints
+Foreign key constraints are enabled using the SQLite connection string builder:
+```csharp
+var connectionStringBuilder = new SqliteConnectionStringBuilder(connectionString)
+{
+    ForeignKeys = true
+};
+```
+
+### Entity Framework Configuration
+The `ApplicationDbContext` is configured with:
+- SQLite-specific decimal column types
+- SQLite-compatible default value SQL (`datetime('now')`)
+- Automatic audit field updates (CreatedAt, UpdatedAt)
+
+## Seed Data
+
+The application automatically seeds the database with realistic test data including:
+- 4 user roles (Admin, Customer, Manager, Support)
+- 8 product categories (hierarchical structure)
+- 6 promotional tags
+- 3 users with profiles and preferences
+- 3 products with variants
+- 1 sample order with items
+- 1 product review
+- 2 user notifications
+
+## GraphQL Queries
+
+### Sample Queries
+
+**Get all users:**
 ```graphql
-mutation {
-  echo(message: "Hello GraphQL!") {
-    message
-    timestamp
-    success
+query {
+  users {
+    id
+    firstName
+    lastName
+    email
+    profile {
+      bio
+      country
+    }
+    preferences {
+      theme
+      language
+    }
   }
 }
 ```
 
-**Calculation Mutation:**
+**Get products with categories:**
 ```graphql
-mutation {
-  calculate(a: 10, b: 5, operation: ADD) {
-    result
-    operation
-    inputA
-    inputB
-    success
+query {
+  products {
+    id
+    name
+    price
+    category {
+      name
+      slug
+    }
+    variants {
+      name
+      price
+      stockQuantity
+    }
   }
 }
 ```
 
-## 🧪 Testing
+**Get orders with items:**
+```graphql
+query {
+  orders {
+    id
+    orderNumber
+    status
+    totalAmount
+    user {
+      firstName
+      lastName
+    }
+    orderItems {
+      productName
+      quantity
+      unitPrice
+    }
+  }
+}
+```
 
-Run the comprehensive test script:
+## Development
 
+### Adding New Migrations
 ```bash
-./test-api.sh
+dotnet ef migrations add MigrationName
 ```
 
-This script will:
-- Start the API server
-- Test all endpoints
-- Verify GraphQL queries and mutations
-- Check health endpoints
-- Validate GraphQL IDE accessibility
-- Clean up resources
+### Updating Database
+```bash
+dotnet ef database update
+```
 
-## ⚙️ Configuration
+### Viewing Database
+The SQLite database file (`graphql_api.db`) can be viewed using any SQLite browser or command-line tools.
 
-### Environment Variables
+## Project Structure
 
-- `ASPNETCORE_ENVIRONMENT`: Set to `Development` for development features
+```
+├── Data/
+│   ├── ApplicationDbContext.cs          # EF Core DbContext
+│   ├── Configurations/                  # Entity configurations
+│   └── Seed/
+│       └── SeedData.cs                  # Database seeding logic
+├── Models/                              # Entity models
+├── GraphQL/                             # GraphQL queries and mutations
+├── Migrations/                          # EF Core migrations
+├── Program.cs                           # Application startup
+├── appsettings.json                     # Configuration
+└── GraphQLApi.csproj                    # Project file
+```
 
-### appsettings.json
+## Key Features Implemented
 
-The application uses hierarchical configuration:
-- `appsettings.json` - Base configuration
-- `appsettings.Development.json` - Development overrides
+### ✅ Acceptance Criteria Met
 
-Key configuration sections:
-- **Logging**: ASP.NET Core logging configuration
-- **Serilog**: Structured logging configuration
-- **GraphQL**: GraphQL-specific settings
+1. **EF Core DbContext properly configured for SQLite** ✅
+   - Connection string configured with foreign key support
+   - SQLite-specific configurations applied
 
-### Development Features
+2. **Database migrations create all tables with relationships** ✅
+   - Comprehensive initial migration created
+   - All foreign key relationships properly defined
 
-When running in Development environment:
-- Enhanced exception details in GraphQL responses
-- GraphQL IDE (Banana Cake Pop) enabled
-- Detailed logging
-- Developer exception page
+3. **Seed data populates all tables with realistic test data** ✅
+   - Users, products, orders, reviews, and more
+   - Complex relationships maintained
 
-## 📝 Logging
+4. **Foreign key constraints enabled and working** ✅
+   - Configured at connection level
+   - Verified through application logs
 
-The application uses Serilog for structured logging with:
-- Console output with timestamps
-- File output with daily rolling (in `logs/` directory)
-- Request logging middleware
-- Contextual enrichment
+5. **Database accessible from GraphQL resolvers** ✅
+   - HotChocolate integration with EF Core
+   - Filtering, sorting, and projections enabled
 
-Log files are created in the `logs/` directory with the pattern `log-YYYY-MM-DD.txt`.
+6. **SQLite database file included in .gitignore but seed data reproducible** ✅
+   - Database files excluded from version control
+   - Seed data automatically applied on startup
 
-## 🔧 Hot Reload
+## Troubleshooting
 
-The application supports .NET hot reload for development:
-- Enabled in `launchSettings.json`
-- Works with `dotnet watch run`
-- Automatic reload on code changes
+### Common Issues
 
-## 🏥 Health Checks
+1. **Foreign Key Constraint Errors**: Ensure foreign key constraints are enabled in the connection string.
 
-Multiple health check endpoints are available:
+2. **Migration Issues**: If migrations fail, try removing the database file and running the application again.
 
-- **`/health`**: Detailed JSON response with check status
-- **`/health/ready`**: Simple readiness check
-- **`/health/live`**: Simple liveness check
+3. **Port Conflicts**: If port 5000 is in use, the application will automatically select an available port.
 
-Health checks include:
-- Self-check to verify API is running
-- Detailed timing information
-- Exception reporting
+## Contributing
 
-## 🔒 CORS Configuration
+1. Make your changes
+2. Add appropriate tests
+3. Update documentation
+4. Submit a pull request
 
-CORS is configured to allow:
-- Any origin
-- Any method
-- Any header
+## License
 
-**Note**: In production, configure CORS more restrictively based on your frontend requirements.
-
-## 🚀 Deployment
-
-For production deployment:
-
-1. Set `ASPNETCORE_ENVIRONMENT=Production`
-2. Update CORS policy for specific origins
-3. Configure appropriate logging levels
-4. Set up proper SSL certificates
-5. Configure health check monitoring
-
-## 📚 Additional Resources
-
-- [HotChocolate Documentation](https://chillicream.com/docs/hotchocolate)
-- [.NET 8 Documentation](https://docs.microsoft.com/en-us/dotnet/)
-- [Serilog Documentation](https://serilog.net/)
-- [ASP.NET Core Health Checks](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks)
+This project is licensed under the MIT License.

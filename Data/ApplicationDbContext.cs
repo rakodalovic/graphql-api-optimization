@@ -58,7 +58,7 @@ public class ApplicationDbContext : DbContext
         // Apply all configurations from the Configurations folder
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // Configure decimal properties globally
+        // Configure decimal properties globally for SQLite
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             var properties = entityType.ClrType.GetProperties()
@@ -71,14 +71,14 @@ public class ApplicationDbContext : DbContext
             }
         }
 
-        // Set default values for CreatedAt
+        // Set default values for CreatedAt - SQLite compatible
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(BaseEntity.CreatedAt))
-                    .HasDefaultValueSql("GETUTCDATE()");
+                    .HasDefaultValueSql("datetime('now')");
             }
         }
     }

@@ -4,6 +4,7 @@ using GraphQLApi.GraphQL;
 using HotChocolate.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using Serilog;
 using System.Text.Json;
 
@@ -27,22 +28,22 @@ try
     // Add services to the container
     builder.Services.AddControllers();
 
-    // Configure Entity Framework
+    // Configure Entity Framework with SQLite
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        if (builder.Environment.IsDevelopment())
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+            ?? "Data Source=graphql_api.db";
+        
+        // Create connection string with foreign key constraints enabled
+        var connectionStringBuilder = new SqliteConnectionStringBuilder(connectionString)
         {
-            // Use In-Memory database for development
-            options.UseInMemoryDatabase("GraphQLApiDb");
-        }
-        else
+            ForeignKeys = true
+        };
+        
+        options.UseSqlite(connectionStringBuilder.ToString(), sqliteOptions =>
         {
-            // Use SQL Server for production
-            options.UseSqlServer(
-                builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-                "Server=(localdb)\\mssqllocaldb;Database=GraphQLApiDb;Trusted_Connection=true;MultipleActiveResultSets=true"
-            );
-        }
+            sqliteOptions.CommandTimeout(30);
+        });
         
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
         options.EnableDetailedErrors(builder.Environment.IsDevelopment());
@@ -86,20 +87,29 @@ try
     {
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
-        if (app.Environment.IsDevelopment())
+        try
         {
-            // For in-memory database, ensure it's created
-            await context.Database.EnsureCreatedAsync();
-        }
-        else
-        {
-            // For SQL Server, run migrations
+            // Apply migrations
             await context.Database.MigrateAsync();
-        }
+            Log.Information("Database migrations applied successfully");
 
-        // Seed the database
-        await SeedData.SeedAsync(context);
-        Log.Information("Database seeded successfully");
+            // Verify foreign key constraints are enabled
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA foreign_keys;";
+            var result = await command.ExecuteScalarAsync();
+            Log.Information("Foreign key constraints status: {Status}", result);
+
+            // Seed the database
+            await SeedData.SeedAsync(context);
+            Log.Information("Database seeded successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while migrating or seeding the database");
+            throw;
+        }
     }
 
     // Configure the HTTP request pipeline
@@ -176,10 +186,11 @@ try
         graphql = "/graphql",
         health = "/health",
         environment = app.Environment.EnvironmentName,
-        timestamp = DateTime.UtcNow
+        timestamp = DateTime.UtcNow,
+        database = "SQLite"
     });
 
-    Log.Information("GraphQL API application configured successfully");
+    Log.Information("GraphQL API application configured successfully with SQLite database");
 
     await app.RunAsync();
 }
