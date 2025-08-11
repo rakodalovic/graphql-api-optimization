@@ -35,15 +35,14 @@ public class Query
     {
         Version = "1.0.0",
         Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+        BuildDate = DateTime.UtcNow
+    };
+
     // User queries
     [UseDbContext(typeof(ApplicationDbContext))]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseDbContext(typeof(ApplicationDbContext))]
-    [UseFiltering]
-    [UseSorting]
-    [UseProjection]
     public IQueryable<User> GetUsers([Service] ApplicationDbContext context)
         => context.Users.Where(u => u.IsActive);
 
@@ -53,15 +52,14 @@ public class Query
             .Include(u => u.Profile)
             .Include(u => u.Preferences)
             .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
+
     // Product queries
     [UseDbContext(typeof(ApplicationDbContext))]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseDbContext(typeof(ApplicationDbContext))]
-    [UseFiltering]
-    [UseSorting]
-    [UseProjection]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
         => context.Products.Where(p => p.IsActive);
 
@@ -71,16 +69,14 @@ public class Query
             .Include(p => p.Category)
             .Include(p => p.Variants)
             .Include(p => p.Images)
+            .Include(p => p.Reviews.Where(r => r.IsApproved))
+            .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
+
     // Category queries
     [UseDbContext(typeof(ApplicationDbContext))]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    // Category queries
-    [UseDbContext(typeof(ApplicationDbContext))]
-    [UseFiltering]
-    [UseSorting]
-    [UseProjection]
     public IQueryable<Category> GetCategories([Service] ApplicationDbContext context)
         => context.Categories.Where(c => c.IsActive);
 
