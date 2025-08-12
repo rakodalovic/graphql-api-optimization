@@ -90,9 +90,9 @@ public class Query
 
     // Order queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseProjection]
     public IQueryable<Order> GetOrders([Service] ApplicationDbContext context)
         => context.Orders;
 
@@ -109,9 +109,9 @@ public class Query
 
     // Review queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseProjection]
     public IQueryable<Review> GetReviews([Service] ApplicationDbContext context)
         => context.Reviews.Where(r => r.IsApproved);
 
@@ -127,17 +127,17 @@ public class Query
 
     // Tag queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseProjection]
     public IQueryable<Models.Tag> GetTags([Service] ApplicationDbContext context)
         => context.Tags.Where(t => t.IsActive);
 
     // Notification queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UseProjection]
     public IQueryable<Notification> GetNotifications([Service] ApplicationDbContext context, int userId)
         => context.Notifications.Where(n => n.UserId == userId && !n.IsArchived);
 

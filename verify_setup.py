@@ -7,7 +7,7 @@ import json
 
 def verify_sqlite_setup():
     """Verify SQLite database setup"""
-    project_dir = "/tmp/5308f3564d2a4bd6ad9d22cebf285125"
+    project_dir = "/tmp/9368d87788b842478126496ba0d26acc"
     db_path = os.path.join(project_dir, "graphql_api.db")
     
     print("🔍 Verifying SQLite Database Setup...")

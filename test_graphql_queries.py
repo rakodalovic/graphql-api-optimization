@@ -13,7 +13,7 @@ def test_graphql_queries():
     # Start the application
     app_process = subprocess.Popen(
         ["dotnet", "run", "--no-build"],
-        cwd="/tmp/5308f3564d2a4bd6ad9d22cebf285125",
+        cwd="/tmp/9368d87788b842478126496ba0d26acc",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
