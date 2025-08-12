@@ -8,7 +8,7 @@ import json
 
 def test_complete_sqlite_setup():
     """Test complete SQLite setup with EF Core"""
-    project_dir = "/tmp/5308f3564d2a4bd6ad9d22cebf285125"
+    project_dir = "/tmp/9368d87788b842478126496ba0d26acc"
     db_path = os.path.join(project_dir, "graphql_api.db")
     
     print("🚀 Testing Complete SQLite Setup with Entity Framework Core")
@@ -166,7 +166,7 @@ def test_complete_sqlite_setup():
     
     print("\n🎉 SQLite configuration with Entity Framework Core is complete!")
     print("\nTo run the application:")
-    print("  cd /tmp/5308f3564d2a4bd6ad9d22cebf285125")
+    print("  cd /tmp/9368d87788b842478126496ba0d26acc")
     print("  dotnet run")
     print("\nThe GraphQL endpoint will be available at: http://localhost:5000/graphql")
     
