@@ -28,8 +28,8 @@ try
     // Add services to the container
     builder.Services.AddControllers();
 
-    // Configure Entity Framework with SQLite
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    // Helper method to configure DbContext options
+    void ConfigureDbContextOptions(DbContextOptionsBuilder options)
     {
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
             ?? "Data Source=graphql_api.db";
@@ -47,6 +47,16 @@ try
         
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
         options.EnableDetailedErrors(builder.Environment.IsDevelopment());
+    }
+
+    // Add DbContextFactory for GraphQL and general use
+    builder.Services.AddDbContextFactory<ApplicationDbContext>(ConfigureDbContextOptions);
+
+    // Register scoped DbContext using the factory
+    builder.Services.AddScoped<ApplicationDbContext>(provider =>
+    {
+        var factory = provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+        return factory.CreateDbContext();
     });
 
     // Configure CORS
