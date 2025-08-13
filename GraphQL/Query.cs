@@ -148,9 +148,14 @@ public class Query
         var totalUsers = await context.Users.CountAsync(u => u.IsActive);
         var totalProducts = await context.Products.CountAsync(p => p.IsActive);
         var totalOrders = await context.Orders.CountAsync();
-        var totalRevenue = await context.Orders
+        
+        // SQLite doesn't support SUM on decimal types directly, so we convert to double first
+        var totalRevenueDouble = await context.Orders
             .Where(o => o.Status == OrderStatus.Delivered)
-            .SumAsync(o => o.TotalAmount);
+            .SumAsync(o => (double)o.TotalAmount);
+        
+        // Convert back to decimal for the response
+        var totalRevenue = (decimal)totalRevenueDouble;
 
         return new DashboardStats
         {
