@@ -7,54 +7,10 @@ namespace GraphQLApi.GraphQL;
 
 public class Mutation
 {
-    /// <summary>
-    /// Echo mutation that returns the input message
-    /// </summary>
-    /// <param name="message">Message to echo</param>
-    /// <returns>Echo response</returns>
-    public EchoPayload Echo(string message)
-    {
-        return new EchoPayload
-        {
-            Message = message,
-            Timestamp = DateTime.UtcNow,
-            Success = true
-        };
-    }
-
-    /// <summary>
-    /// Simple calculation mutation
-    /// </summary>
-    /// <param name="a">First number</param>
-    /// <param name="b">Second number</param>
-    /// <param name="operation">Operation to perform</param>
-    /// <returns>Calculation result</returns>
-    public CalculationPayload Calculate(double a, double b, CalculationOperation operation = CalculationOperation.Add)
-    {
-        double result = operation switch
-        {
-            CalculationOperation.Add => a + b,
-            CalculationOperation.Subtract => a - b,
-            CalculationOperation.Multiply => a * b,
-            CalculationOperation.Divide => b != 0 ? a / b : throw new GraphQLException("Division by zero is not allowed"),
-            _ => throw new GraphQLException("Invalid operation")
-        };
-
-        return new CalculationPayload
-        {
-            Result = result,
-            Operation = operation,
-            InputA = a,
-            InputB = b,
-            Success = true
-        };
-    }
-
     // User mutations
     [UseDbContext(typeof(ApplicationDbContext))]
     public async Task<UserPayload> CreateUser([Service] ApplicationDbContext context, CreateUserInput input)
     {
-        // Check if email already exists
         if (await context.Users.AnyAsync(u => u.Email == input.Email))
         {
             return new UserPayload
@@ -64,7 +20,6 @@ public class Mutation
             };
         }
 
-        // Check if username already exists
         if (await context.Users.AnyAsync(u => u.Username == input.Username))
         {
             return new UserPayload
@@ -80,7 +35,7 @@ public class Mutation
             LastName = input.LastName,
             Email = input.Email,
             Username = input.Username,
-            PasswordHash = input.Password, // In real app, hash the password
+            PasswordHash = input.Password,
             PhoneNumber = input.PhoneNumber,
             IsActive = true,
             EmailConfirmed = false
@@ -89,7 +44,6 @@ public class Mutation
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        // Assign default customer role
         var customerRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Customer");
         if (customerRole != null)
         {
@@ -115,7 +69,6 @@ public class Mutation
     [UseDbContext(typeof(ApplicationDbContext))]
     public async Task<ProductPayload> CreateProduct([Service] ApplicationDbContext context, CreateProductInput input)
     {
-        // Check if SKU already exists
         if (!string.IsNullOrEmpty(input.Sku) && await context.Products.AnyAsync(p => p.Sku == input.Sku))
         {
             return new ProductPayload
@@ -154,7 +107,6 @@ public class Mutation
     [UseDbContext(typeof(ApplicationDbContext))]
     public async Task<CartPayload> AddToCart([Service] ApplicationDbContext context, AddToCartInput input)
     {
-        // Get or create active cart
         var cart = await context.Carts
             .Include(c => c.CartItems)
             .FirstOrDefaultAsync(c => c.UserId == input.UserId && c.IsActive);
@@ -171,7 +123,6 @@ public class Mutation
             await context.SaveChangesAsync();
         }
 
-        // Check if item already exists in cart
         var existingItem = cart.CartItems
             .FirstOrDefault(ci => ci.ProductId == input.ProductId && ci.ProductVariantId == input.ProductVariantId);
 
@@ -182,7 +133,6 @@ public class Mutation
         }
         else
         {
-            // Get product price
             var product = await context.Products.FindAsync(input.ProductId);
             if (product == null)
             {
@@ -216,7 +166,6 @@ public class Mutation
             context.CartItems.Add(cartItem);
         }
 
-        // Update cart totals
         await UpdateCartTotals(context, cart);
         await context.SaveChangesAsync();
 
@@ -232,7 +181,6 @@ public class Mutation
     [UseDbContext(typeof(ApplicationDbContext))]
     public async Task<ReviewPayload> CreateReview([Service] ApplicationDbContext context, CreateReviewInput input)
     {
-        // Check if user already reviewed this product
         if (await context.Reviews.AnyAsync(r => r.UserId == input.UserId && r.ProductId == input.ProductId))
         {
             return new ReviewPayload
@@ -251,7 +199,7 @@ public class Mutation
             Comment = input.Comment,
             IsVerifiedPurchase = await context.OrderItems
                 .AnyAsync(oi => oi.Order.UserId == input.UserId && oi.ProductId == input.ProductId),
-            IsApproved = false // Reviews need approval
+            IsApproved = false
         };
 
         context.Reviews.Add(review);
