@@ -8,29 +8,6 @@ namespace GraphQLApi.GraphQL;
 
 public class Query
 {
-    /// <summary>
-    /// Returns a simple "Hello World" message
-    /// </summary>
-    /// <returns>Hello World string</returns>
-    public string GetHello() => "Hello World";
-
-    /// <summary>
-    /// Returns a personalized greeting
-    /// </summary>
-    /// <param name="name">Name to greet</param>
-    /// <returns>Personalized greeting</returns>
-    public string GetGreeting(string name = "World") => $"Hello, {name}!";
-
-    /// <summary>
-    /// Returns current server time
-    /// </summary>
-    /// <returns>Current UTC time</returns>
-    public DateTime GetServerTime() => DateTime.UtcNow;
-
-    /// <summary>
-    /// Returns API version information
-    /// </summary>
-    /// <returns>API version info</returns>
     public ApiVersion GetVersion() => new ApiVersion
     {
         Version = "1.0.0",
@@ -149,12 +126,10 @@ public class Query
         var totalProducts = await context.Products.CountAsync(p => p.IsActive);
         var totalOrders = await context.Orders.CountAsync();
         
-        // SQLite doesn't support SUM on decimal types directly, so we convert to double first
         var totalRevenueDouble = await context.Orders
             .Where(o => o.Status == OrderStatus.Delivered)
             .SumAsync(o => (double)o.TotalAmount);
         
-        // Convert back to decimal for the response
         var totalRevenue = (decimal)totalRevenueDouble;
 
         return new DashboardStats
@@ -227,12 +202,10 @@ public class Query
     {
         var results = new PaymentMethodResults();
 
-        // Get credit card payments for this payment
         results.CreditCardPayments = await context.CreditCardPayments
             .Where(ccp => ccp.PaymentId == paymentId)
             .ToListAsync();
 
-        // Get PayPal payments for this payment
         results.PaypalPayments = await context.PaypalPayments
             .Where(pp => pp.PaymentId == paymentId)
             .ToListAsync();

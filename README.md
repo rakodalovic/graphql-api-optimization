@@ -58,10 +58,10 @@ The application includes the following entities with complex relationships:
    ```
 
 The application will be available at:
-- **API**: http://localhost:5000
-- **GraphQL**: http://localhost:5000/graphql
-- **GraphQL Playground**: http://localhost:5000/graphql (in development mode)
-- **Health Checks**: http://localhost:5000/health
+- **API**: http://localhost:5001
+- **GraphQL**: http://localhost:5001/graphql
+- **GraphQL Playground**: http://localhost:5001/graphql (in development mode)
+- **Health Checks**: http://localhost:5001/health
 
 ## Database Configuration
 
@@ -234,7 +234,7 @@ The SQLite database file (`graphql_api.db`) can be viewed using any SQLite brows
 
 2. **Migration Issues**: If migrations fail, try removing the database file and running the application again.
 
-3. **Port Conflicts**: If port 5000 is in use, the application will automatically select an available port.
+3. **Port Conflicts**: If port 5001 is in use, the application will automatically select an available port.
 
 ## Contributing
 
