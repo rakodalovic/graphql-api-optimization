@@ -165,6 +165,80 @@ public class Query
             TotalRevenue = totalRevenue
         };
     }
+
+    // Search functionality returning SearchResult union
+    [UseDbContext(typeof(ApplicationDbContext))]
+    public async Task<SearchResults> Search([Service] ApplicationDbContext context, string searchTerm)
+    {
+        var results = new SearchResults();
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return results;
+
+        var searchTermLower = searchTerm.ToLower();
+
+        // Search users
+        results.Users = await context.Users
+            .Where(u => u.IsActive && 
+                (u.FirstName.ToLower().Contains(searchTermLower) ||
+                 u.LastName.ToLower().Contains(searchTermLower) ||
+                 u.Username.ToLower().Contains(searchTermLower) ||
+                 u.Email.ToLower().Contains(searchTermLower)))
+            .Take(10)
+            .ToListAsync();
+
+        // Search products
+        results.Products = await context.Products
+            .Where(p => p.IsActive && 
+                (p.Name.ToLower().Contains(searchTermLower) ||
+                 (p.Description != null && p.Description.ToLower().Contains(searchTermLower)) ||
+                 (p.Sku != null && p.Sku.ToLower().Contains(searchTermLower))))
+            .Take(10)
+            .ToListAsync();
+
+        // Search categories
+        results.Categories = await context.Categories
+            .Where(c => c.IsActive && 
+                (c.Name.ToLower().Contains(searchTermLower) ||
+                 (c.Description != null && c.Description.ToLower().Contains(searchTermLower))))
+            .Take(10)
+            .ToListAsync();
+
+        return results;
+    }
+
+    // Payment method queries
+    [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
+    [UseFiltering]
+    [UseSorting]
+    public IQueryable<CreditCardPayment> GetCreditCardPayments([Service] ApplicationDbContext context)
+        => context.CreditCardPayments;
+
+    [UseDbContext(typeof(ApplicationDbContext))]
+    [UseProjection]
+    [UseFiltering]
+    [UseSorting]
+    public IQueryable<PaypalPayment> GetPaypalPayments([Service] ApplicationDbContext context)
+        => context.PaypalPayments;
+
+    [UseDbContext(typeof(ApplicationDbContext))]
+    public async Task<PaymentMethodResults> GetPaymentMethods([Service] ApplicationDbContext context, int paymentId)
+    {
+        var results = new PaymentMethodResults();
+
+        // Get credit card payments for this payment
+        results.CreditCardPayments = await context.CreditCardPayments
+            .Where(ccp => ccp.PaymentId == paymentId)
+            .ToListAsync();
+
+        // Get PayPal payments for this payment
+        results.PaypalPayments = await context.PaypalPayments
+            .Where(pp => pp.PaymentId == paymentId)
+            .ToListAsync();
+
+        return results;
+    }
 }
 
 public record ApiVersion
@@ -180,4 +254,17 @@ public record DashboardStats
     public int TotalProducts { get; init; }
     public int TotalOrders { get; init; }
     public decimal TotalRevenue { get; init; }
+}
+
+public class SearchResults
+{
+    public List<User> Users { get; set; } = new List<User>();
+    public List<Product> Products { get; set; } = new List<Product>();
+    public List<Category> Categories { get; set; } = new List<Category>();
+}
+
+public class PaymentMethodResults
+{
+    public List<CreditCardPayment> CreditCardPayments { get; set; } = new List<CreditCardPayment>();
+    public List<PaypalPayment> PaypalPayments { get; set; } = new List<PaypalPayment>();
 }
