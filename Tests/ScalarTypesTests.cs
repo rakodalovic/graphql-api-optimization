@@ -326,4 +326,37 @@ public class ScalarTypesTests
         Assert.False(success);
         Assert.Null(result);
     }
+
+    [Theory]
+    [InlineData("los_mejl(&*@0   s292)")]
+    [InlineData("@example.com")]
+    [InlineData("test@")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("notanemail")]
+    public void EmailType_InvalidEmailsFromIssue_ShouldThrowSerializationException(string invalidEmail)
+    {
+        // Arrange
+        var emailType = new EmailType();
+        var valueSyntax = new StringValueNode(invalidEmail);
+
+        // Act & Assert
+        var exception = Assert.Throws<SerializationException>(() => emailType.ParseLiteral(valueSyntax));
+        Assert.Contains("is not a valid email address", exception.Message);
+    }
+
+    [Fact]
+    public void EmailType_SpecificInvalidEmailFromIssue_ShouldBeRejected()
+    {
+        // Arrange - This is the exact invalid email from the GitHub issue
+        var emailType = new EmailType();
+        var invalidEmail = "los_mejl(&*@0   s292)";
+
+        // Act
+        var success = emailType.TrySerialize(invalidEmail, out var result);
+
+        // Assert
+        Assert.False(success);
+        Assert.Null(result);
+    }
 }

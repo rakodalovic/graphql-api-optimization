@@ -230,6 +230,7 @@ public record CreateUserInput
 {
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.EmailType))]
     public string Email { get; init; } = string.Empty;
     public string Username { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
