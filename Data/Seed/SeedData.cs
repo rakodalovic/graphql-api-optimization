@@ -15,6 +15,7 @@ public static class SeedData
         await SeedOrdersAsync(context);
         await SeedReviewsAsync(context);
         await SeedNotificationsAsync(context);
+        await SeedPaymentMethodsAsync(context);
     }
 
     private static async Task SeedRolesAsync(ApplicationDbContext context)
@@ -424,6 +425,93 @@ public static class SeedData
         };
 
         context.Notifications.AddRange(notifications);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedPaymentMethodsAsync(ApplicationDbContext context)
+    {
+        if (await context.CreditCardPayments.AnyAsync() || await context.PaypalPayments.AnyAsync()) return;
+
+        // Get or create a payment to associate with payment methods
+        var payment = await context.Payments.FirstOrDefaultAsync();
+        if (payment == null)
+        {
+            // Create a sample payment
+            var user = await context.Users.FirstAsync(u => u.Username == "johndoe");
+            var order = await context.Orders.FirstAsync();
+            
+            payment = new Payment
+            {
+                UserId = user.Id,
+                OrderId = order.Id,
+                PaymentNumber = "PAY-2024-001",
+                Method = PaymentMethod.CreditCard,
+                Status = PaymentStatus.Completed,
+                Amount = 999.99m,
+                Currency = "USD",
+                TransactionId = "txn_sample_123",
+                PaymentGateway = "Stripe",
+                ProcessedAt = DateTime.UtcNow
+            };
+            
+            context.Payments.Add(payment);
+            await context.SaveChangesAsync();
+        }
+
+        var creditCardPayments = new List<CreditCardPayment>
+        {
+            new()
+            {
+                PaymentId = payment.Id,
+                Amount = 999.99m,
+                Currency = "USD",
+                TransactionId = "cc_txn_123456789",
+                Status = PaymentStatus.Completed,
+                LastFourDigits = "4242",
+                CardBrand = "Visa",
+                CardHolderName = "John Doe",
+                ExpiryMonth = 12,
+                ExpiryYear = 2026,
+                AuthorizationCode = "AUTH123456",
+                ProcessorName = "Stripe"
+            },
+            new()
+            {
+                PaymentId = payment.Id,
+                Amount = 89.99m,
+                Currency = "USD",
+                TransactionId = "cc_txn_987654321",
+                Status = PaymentStatus.Completed,
+                LastFourDigits = "1234",
+                CardBrand = "Mastercard",
+                CardHolderName = "Jane Smith",
+                ExpiryMonth = 8,
+                ExpiryYear = 2025,
+                AuthorizationCode = "AUTH789012",
+                ProcessorName = "Stripe"
+            }
+        };
+
+        var paypalPayments = new List<PaypalPayment>
+        {
+            new()
+            {
+                PaymentId = payment.Id,
+                Amount = 299.99m,
+                Currency = "USD",
+                TransactionId = "pp_txn_abcdef123",
+                Status = PaymentStatus.Completed,
+                PaypalTransactionId = "PAYPAL123456789",
+                PayerId = "PAYER123",
+                PayerEmail = "customer@example.com",
+                PayerName = "Customer Name",
+                PaymentMethod = "instant",
+                PaypalResponse = "COMPLETED"
+            }
+        };
+
+        context.CreditCardPayments.AddRange(creditCardPayments);
+        context.PaypalPayments.AddRange(paypalPayments);
         await context.SaveChangesAsync();
     }
 }

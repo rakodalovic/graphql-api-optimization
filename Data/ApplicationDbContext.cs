@@ -41,6 +41,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Address> Addresses { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<PaymentHistory> PaymentHistory { get; set; }
+    public DbSet<CreditCardPayment> CreditCardPayments { get; set; }
+    public DbSet<PaypalPayment> PaypalPayments { get; set; }
 
     // Notification entities
     public DbSet<Notification> Notifications { get; set; }

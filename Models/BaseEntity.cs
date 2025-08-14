@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using GraphQLApi.GraphQL;
 
 namespace GraphQLApi.Models;
 
-public abstract class BaseEntity
+public abstract class BaseEntity : IEntityNode, IAuditable
 {
     [Key]
     public int Id { get; set; }
