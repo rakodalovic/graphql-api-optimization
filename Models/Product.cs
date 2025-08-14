@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using HotChocolate;
 
 namespace GraphQLApi.Models;
 
@@ -87,6 +88,7 @@ public class ProductVariant : BaseEntity
     public bool IsActive { get; set; } = true;
 
     [StringLength(255)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string? ImageUrl { get; set; }
 
     public int SortOrder { get; set; } = 0;
@@ -122,6 +124,7 @@ public class ProductImage : BaseEntity
 
     [Required]
     [StringLength(500)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string ImageUrl { get; set; } = string.Empty;
 
     [StringLength(200)]
@@ -148,6 +151,7 @@ public class Category : BaseEntity
     public string? Slug { get; set; }
 
     [StringLength(500)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string? ImageUrl { get; set; }
 
     public bool IsActive { get; set; } = true;

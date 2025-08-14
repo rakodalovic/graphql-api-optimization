@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HotChocolate;
 
 namespace GraphQLApi.Models;
 
@@ -15,6 +16,7 @@ public class User : BaseEntity
     [Required]
     [EmailAddress]
     [StringLength(255)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.EmailType))]
     public string Email { get; set; } = string.Empty;
 
     [Required]
@@ -58,6 +60,7 @@ public class UserProfile : BaseEntity
     public string? Bio { get; set; }
 
     [StringLength(255)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string? AvatarUrl { get; set; }
 
     public DateTime? DateOfBirth { get; set; }

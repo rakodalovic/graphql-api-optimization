@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HotChocolate;
 
 namespace GraphQLApi.Models;
 
@@ -26,15 +27,18 @@ public class Notification : BaseEntity
     public bool IsArchived { get; set; } = false;
 
     [StringLength(500)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string? ActionUrl { get; set; }
 
     [StringLength(100)]
     public string? ActionText { get; set; }
 
     [StringLength(500)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.UrlType))]
     public string? ImageUrl { get; set; }
 
     [StringLength(1000)]
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.JsonType))]
     public string? Metadata { get; set; }
 
     public DateTime? ReadAt { get; set; }
