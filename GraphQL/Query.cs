@@ -1,8 +1,10 @@
 using GraphQLApi.Data;
 using GraphQLApi.Models;
+using GraphQLApi.GraphQL.Types;
 using HotChocolate;
 using HotChocolate.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace GraphQLApi.GraphQL;
 
@@ -211,6 +213,32 @@ public class Query
             .ToListAsync();
 
         return results;
+    }
+
+    // Example query to demonstrate custom scalars and enums
+    public ExampleType GetExampleWithCustomTypes()
+    {
+        return new ExampleType
+        {
+            Id = 1,
+            Email = "example@test.com",
+            Website = "https://example.com",
+            Metadata = JsonSerializer.Deserialize<JsonElement>("{\"key\": \"value\", \"number\": 42}"),
+            OrderStatus = OrderStatus.Processing,
+            PaymentStatus = PaymentStatus.Completed
+        };
+    }
+
+    // Query to get all possible order statuses
+    public OrderStatus[] GetOrderStatuses()
+    {
+        return Enum.GetValues<OrderStatus>();
+    }
+
+    // Query to get all possible payment statuses
+    public PaymentStatus[] GetPaymentStatuses()
+    {
+        return Enum.GetValues<PaymentStatus>();
     }
 }
 

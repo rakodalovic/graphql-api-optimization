@@ -1,6 +1,8 @@
 using GraphQLApi.Data;
 using GraphQLApi.Data.Seed;
 using GraphQLApi.GraphQL;
+using GraphQLApi.GraphQL.Scalars;
+using GraphQLApi.GraphQL.Types;
 using HotChocolate.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +87,12 @@ try
         .AddType<PaymentMethodUnion>()
         .AddInterfaceType<IEntityNode>()
         .AddInterfaceType<IAuditable>()
+        .AddType<GraphQLApi.GraphQL.Scalars.EmailType>()
+        .AddType<GraphQLApi.GraphQL.Scalars.UrlType>()
+        .AddType<GraphQLApi.GraphQL.Scalars.JsonType>()
+        .AddType<OrderStatusType>()
+        .AddType<PaymentStatusType>()
+        .AddType<ExampleType>()
         .AddFiltering()
         .AddSorting()
         .AddProjections()
