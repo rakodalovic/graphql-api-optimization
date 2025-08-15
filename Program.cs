@@ -83,6 +83,7 @@ try
         .AddGraphQLServer()
         .AddQueryType<Query>()
         .AddMutationType<Mutation>()
+        .AddSubscriptionType<Subscription>()
         .AddType<SearchResultUnion>()
         .AddType<PaymentMethodUnion>()
         .AddInterfaceType<IEntityNode>()
@@ -96,6 +97,7 @@ try
         .AddFiltering()
         .AddSorting()
         .AddProjections()
+        .AddInMemorySubscriptions()
         .RegisterDbContext<ApplicationDbContext>(DbContextKind.Pooled)
         .ModifyRequestOptions(opt =>
         {
@@ -161,6 +163,9 @@ try
 
     // Use CORS
     app.UseCors("GraphQLPolicy");
+
+    // Add WebSocket support for subscriptions
+    app.UseWebSockets();
 
     // Map GraphQL endpoint
     app.MapGraphQL("/graphql")
