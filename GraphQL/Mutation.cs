@@ -1,6 +1,7 @@
 using GraphQLApi.Data;
 using GraphQLApi.Models;
 using HotChocolate;
+using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GraphQLApi.GraphQL;
@@ -213,6 +214,161 @@ public class Mutation
         };
     }
 
+    // Order mutations
+    [UseDbContext(typeof(ApplicationDbContext))]
+    public async Task<OrderPayload> CreateOrder([Service] ApplicationDbContext context, [Service] ITopicEventSender eventSender, CreateOrderInput input)
+    {
+        var user = await context.Users.FindAsync(input.UserId);
+        if (user == null)
+        {
+            return new OrderPayload
+            {
+                Success = false,
+                Message = "User not found"
+            };
+        }
+
+        var cart = await context.Carts
+            .Include(c => c.CartItems)
+            .ThenInclude(ci => ci.Product)
+            .FirstOrDefaultAsync(c => c.UserId == input.UserId && c.IsActive);
+
+        if (cart == null || !cart.CartItems.Any())
+        {
+            return new OrderPayload
+            {
+                Success = false,
+                Message = "Cart is empty or not found"
+            };
+        }
+
+        var order = new Order
+        {
+            OrderNumber = GenerateOrderNumber(),
+            UserId = input.UserId,
+            Status = OrderStatus.Pending,
+            SubtotalAmount = cart.SubtotalAmount,
+            TaxAmount = cart.TaxAmount,
+            ShippingAmount = cart.ShippingAmount,
+            DiscountAmount = cart.DiscountAmount,
+            TotalAmount = cart.TotalAmount,
+            Currency = cart.Currency ?? "USD",
+            Notes = input.Notes,
+            ShippingAddressId = input.ShippingAddressId,
+            BillingAddressId = input.BillingAddressId
+        };
+
+        context.Orders.Add(order);
+        await context.SaveChangesAsync();
+
+        // Create order items from cart items
+        foreach (var cartItem in cart.CartItems)
+        {
+            var orderItem = new OrderItem
+            {
+                OrderId = order.Id,
+                ProductId = cartItem.ProductId,
+                ProductVariantId = cartItem.ProductVariantId,
+                ProductName = cartItem.Product.Name,
+                ProductSku = cartItem.Product.Sku,
+                Quantity = cartItem.Quantity,
+                UnitPrice = cartItem.UnitPrice,
+                TotalPrice = cartItem.TotalPrice
+            };
+
+            context.OrderItems.Add(orderItem);
+        }
+
+        // Create order status history
+        var statusHistory = new OrderStatusHistory
+        {
+            OrderId = order.Id,
+            Status = OrderStatus.Pending,
+            Notes = "Order created",
+            ChangedAt = DateTime.UtcNow,
+            ChangedBy = "System"
+        };
+
+        context.OrderStatusHistory.Add(statusHistory);
+
+        // Clear the cart
+        cart.IsActive = false;
+        context.CartItems.RemoveRange(cart.CartItems);
+
+        await context.SaveChangesAsync();
+
+        // Load the complete order with navigation properties for the subscription
+        var completeOrder = await context.Orders
+            .Include(o => o.User)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .Include(o => o.ShippingAddress)
+            .Include(o => o.BillingAddress)
+            .FirstAsync(o => o.Id == order.Id);
+
+        // Publish the order created event
+        await eventSender.SendAsync("order_created", completeOrder);
+
+        return new OrderPayload
+        {
+            Order = completeOrder,
+            Success = true,
+            Message = "Order created successfully"
+        };
+    }
+
+    // Notification mutations
+    [UseDbContext(typeof(ApplicationDbContext))]
+    public async Task<NotificationPayload> CreateNotification([Service] ApplicationDbContext context, [Service] ITopicEventSender eventSender, CreateNotificationInput input)
+    {
+        var user = await context.Users.FindAsync(input.UserId);
+        if (user == null)
+        {
+            return new NotificationPayload
+            {
+                Success = false,
+                Message = "User not found"
+            };
+        }
+
+        var notification = new Notification
+        {
+            UserId = input.UserId,
+            Title = input.Title,
+            Message = input.Message,
+            Type = input.Type,
+            Priority = input.Priority,
+            ActionUrl = input.ActionUrl,
+            ActionText = input.ActionText,
+            ImageUrl = input.ImageUrl,
+            Metadata = input.Metadata,
+            ExpiresAt = input.ExpiresAt
+        };
+
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+
+        // Load the complete notification with navigation properties for the subscription
+        var completeNotification = await context.Notifications
+            .Include(n => n.User)
+            .FirstAsync(n => n.Id == notification.Id);
+
+        // Publish the notification received event
+        await eventSender.SendAsync("notification_received", completeNotification);
+
+        return new NotificationPayload
+        {
+            Notification = completeNotification,
+            Success = true,
+            Message = "Notification created successfully"
+        };
+    }
+
+    private static string GenerateOrderNumber()
+    {
+        return $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
+    }
+
     private static async Task UpdateCartTotals(ApplicationDbContext context, Cart cart)
     {
         var cartItems = await context.CartItems
@@ -267,6 +423,28 @@ public record CreateReviewInput
     public string? Comment { get; init; }
 }
 
+public record CreateOrderInput
+{
+    public int UserId { get; init; }
+    public string? Notes { get; init; }
+    public int? ShippingAddressId { get; init; }
+    public int? BillingAddressId { get; init; }
+}
+
+public record CreateNotificationInput
+{
+    public int UserId { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
+    public NotificationType Type { get; init; }
+    public NotificationPriority Priority { get; init; } = NotificationPriority.Normal;
+    public string? ActionUrl { get; init; }
+    public string? ActionText { get; init; }
+    public string? ImageUrl { get; init; }
+    public string? Metadata { get; init; }
+    public DateTime? ExpiresAt { get; init; }
+}
+
 // Payload types
 public record UserPayload
 {
@@ -292,6 +470,20 @@ public record CartPayload
 public record ReviewPayload
 {
     public Review? Review { get; init; }
+    public bool Success { get; init; }
+    public string Message { get; init; } = string.Empty;
+}
+
+public record OrderPayload
+{
+    public Order? Order { get; init; }
+    public bool Success { get; init; }
+    public string Message { get; init; } = string.Empty;
+}
+
+public record NotificationPayload
+{
+    public Notification? Notification { get; init; }
     public bool Success { get; init; }
     public string Message { get; init; } = string.Empty;
 }
