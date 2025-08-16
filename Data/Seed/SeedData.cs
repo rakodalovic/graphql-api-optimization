@@ -339,27 +339,81 @@ public static class SeedData
     {
         if (await context.Orders.AnyAsync()) return;
 
-        var customer = await context.Users.FirstAsync(u => u.Username == "johndoe");
+        var johnUser = await context.Users.FirstAsync(u => u.Username == "johndoe");
+        var janeUser = await context.Users.FirstAsync(u => u.Username == "janesmith");
+        var adminUser = await context.Users.FirstAsync(u => u.Username == "admin");
         var product = await context.Products.FirstAsync(p => p.Sku == "IPHONE15PRO");
 
-        var order = new Order
+        // Create multiple orders for different users to demonstrate DataLoader batching
+        var orders = new List<Order>
         {
-            OrderNumber = "ORD-2024-001",
-            UserId = customer.Id,
-            Status = OrderStatus.Delivered,
-            SubtotalAmount = 999.99m,
-            TaxAmount = 79.99m,
-            ShippingAmount = 9.99m,
-            TotalAmount = 1089.97m,
-            Currency = "USD"
+            // John's orders
+            new()
+            {
+                OrderNumber = "ORD-2024-001",
+                UserId = johnUser.Id,
+                Status = OrderStatus.Delivered,
+                SubtotalAmount = 999.99m,
+                TaxAmount = 79.99m,
+                ShippingAmount = 9.99m,
+                TotalAmount = 1089.97m,
+                Currency = "USD"
+            },
+            new()
+            {
+                OrderNumber = "ORD-2024-002",
+                UserId = johnUser.Id,
+                Status = OrderStatus.Processing,
+                SubtotalAmount = 599.99m,
+                TaxAmount = 47.99m,
+                ShippingAmount = 9.99m,
+                TotalAmount = 657.97m,
+                Currency = "USD"
+            },
+            // Jane's orders
+            new()
+            {
+                OrderNumber = "ORD-2024-003",
+                UserId = janeUser.Id,
+                Status = OrderStatus.Shipped,
+                SubtotalAmount = 299.99m,
+                TaxAmount = 23.99m,
+                ShippingAmount = 9.99m,
+                TotalAmount = 333.97m,
+                Currency = "USD"
+            },
+            new()
+            {
+                OrderNumber = "ORD-2024-004",
+                UserId = janeUser.Id,
+                Status = OrderStatus.Confirmed,
+                SubtotalAmount = 199.99m,
+                TaxAmount = 15.99m,
+                ShippingAmount = 9.99m,
+                TotalAmount = 225.97m,
+                Currency = "USD"
+            },
+            // Admin user order
+            new()
+            {
+                OrderNumber = "ORD-2024-005",
+                UserId = adminUser.Id,
+                Status = OrderStatus.Cancelled,
+                SubtotalAmount = 99.99m,
+                TaxAmount = 7.99m,
+                ShippingAmount = 9.99m,
+                TotalAmount = 117.97m,
+                Currency = "USD"
+            }
         };
 
-        context.Orders.Add(order);
+        context.Orders.AddRange(orders);
         await context.SaveChangesAsync();
 
+        // Add order items for the first order (keeping it simple)
         var orderItem = new OrderItem
         {
-            OrderId = order.Id,
+            OrderId = orders[0].Id,
             ProductId = product.Id,
             ProductName = product.Name,
             ProductSku = product.Sku,

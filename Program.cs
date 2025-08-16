@@ -1,6 +1,7 @@
 using GraphQLApi.Data;
 using GraphQLApi.Data.Seed;
 using GraphQLApi.GraphQL;
+using GraphQLApi.GraphQL.DataLoaders;
 using GraphQLApi.GraphQL.Scalars;
 using GraphQLApi.GraphQL.Types;
 using HotChocolate.AspNetCore;
@@ -78,6 +79,9 @@ try
         .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"))
         .AddDbContextCheck<ApplicationDbContext>("database");
 
+    // Register DataLoaders
+    builder.Services.AddScoped<OrdersByUserIdDataLoader>();
+
     // Configure GraphQL with HotChocolate
     builder.Services
         .AddGraphQLServer()
@@ -94,6 +98,7 @@ try
         .AddType<OrderStatusType>()
         .AddType<PaymentStatusType>()
         .AddType<ExampleType>()
+        .AddTypeExtension<UserTypeExtensions>()
         .AddFiltering()
         .AddSorting()
         .AddProjections()
@@ -113,17 +118,26 @@ try
         
         try
         {
-            // Apply migrations
-            await context.Database.MigrateAsync();
-            Log.Information("Database migrations applied successfully");
+            // Apply migrations (skip for in-memory database in tests)
+            if (!context.Database.IsInMemory())
+            {
+                await context.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully");
 
-            // Verify foreign key constraints are enabled
-            var connection = context.Database.GetDbConnection();
-            await connection.OpenAsync();
-            using var command = connection.CreateCommand();
-            command.CommandText = "PRAGMA foreign_keys;";
-            var result = await command.ExecuteScalarAsync();
-            Log.Information("Foreign key constraints status: {Status}", result);
+                // Verify foreign key constraints are enabled
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = "PRAGMA foreign_keys;";
+                var result = await command.ExecuteScalarAsync();
+                Log.Information("Foreign key constraints status: {Status}", result);
+            }
+            else
+            {
+                // For in-memory database, ensure it's created
+                await context.Database.EnsureCreatedAsync();
+                Log.Information("In-memory database created successfully");
+            }
 
             // Seed the database
             await SeedData.SeedAsync(context);
@@ -229,3 +243,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Make Program class accessible for testing
+public partial class Program { }
