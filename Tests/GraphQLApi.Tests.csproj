@@ -24,6 +24,7 @@
     <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.0" />
     <PackageReference Include="HotChocolate.Data.EntityFramework" Version="13.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
+    <PackageReference Include="Moq" Version="4.20.69" />
   </ItemGroup>
 
   <ItemGroup>
