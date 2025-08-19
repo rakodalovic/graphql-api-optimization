@@ -1,0 +1,68 @@
+.error-message-container {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  margin: 16px 0;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+}
+
+.error-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.error-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.error-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.retry-button,
+.dismiss-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-button {
+  background-color: #c33;
+  color: white;
+}
+
+.retry-button:hover {
+  background-color: #a22;
+}
+
+.dismiss-button {
+  background-color: transparent;
+  color: #c33;
+  border: 1px solid #c33;
+}
+
+.dismiss-button:hover {
+  background-color: #c33;
+  color: white;
+}

@@ -1,9 +1,30 @@
-# GraphQL API with SQLite Database
+# React Frontend with Apollo Client + .NET GraphQL Backend
 
-This project demonstrates a GraphQL API built with ASP.NET Core and Entity Framework Core, using SQLite as the database provider.
+This project demonstrates a full-stack application with a React TypeScript frontend using Apollo Client connected to a .NET GraphQL backend built with ASP.NET Core and Entity Framework Core.
+
+## Project Structure
+
+```
+├── backend/                 # .NET GraphQL API
+│   ├── Models/             # Entity models
+│   ├── GraphQL/            # GraphQL schema, queries, mutations
+│   ├── Data/               # Database context and configurations
+│   ├── Tests/              # Unit and integration tests
+│   └── Program.cs          # Application entry point
+├── frontend/               # React TypeScript application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── context/        # React context providers
+│   │   ├── graphql/        # Apollo Client configuration and queries
+│   │   └── generated/      # Generated TypeScript types (optional)
+│   ├── public/             # Static assets
+│   └── package.json        # Frontend dependencies
+└── README.md               # This file
+```
 
 ## Features
 
+### Backend (.NET GraphQL API)
 - ✅ **SQLite Database Configuration**: File-based SQLite database for simplicity
 - ✅ **Entity Framework Core Integration**: Comprehensive migrations and DbContext setup
 - ✅ **Foreign Key Constraints**: Properly configured and enabled for data integrity
@@ -11,6 +32,17 @@ This project demonstrates a GraphQL API built with ASP.NET Core and Entity Frame
 - ✅ **GraphQL Integration**: HotChocolate GraphQL server with filtering, sorting, and projections
 - ✅ **Health Checks**: Database and application health monitoring
 - ✅ **Logging**: Structured logging with Serilog
+- ✅ **CORS Configuration**: Configured to allow frontend connections
+- ✅ **WebSocket Support**: Real-time subscriptions enabled
+
+### Frontend (React + Apollo Client)
+- ✅ **React 18+ with TypeScript**: Latest React with full TypeScript support
+- ✅ **Apollo Client Integration**: GraphQL client with intelligent caching
+- ✅ **Global State Management**: Context API for loading/error states
+- ✅ **Error Handling**: Global error handling with user-friendly messages
+- ✅ **Loading States**: Global loading state management
+- ✅ **GraphQL Code Generation**: Automatic TypeScript type generation
+- ✅ **Apollo DevTools Support**: Development tools integration
 
 ## Database Schema
 
@@ -38,30 +70,49 @@ The application includes the following entities with complex relationships:
 
 ### Prerequisites
 - .NET 8.0 SDK
+- Node.js 18+
 - Entity Framework Core Tools
 
-### Installation
+### Installation & Running
 
-1. **Restore NuGet packages**:
-   ```bash
-   dotnet restore
-   ```
+#### 1. Start the Backend (.NET GraphQL API)
+```bash
+cd backend
+dotnet restore
+dotnet run
+```
 
-2. **Apply database migrations** (automatically done on startup):
-   ```bash
-   dotnet ef database update
-   ```
-
-3. **Run the application**:
-   ```bash
-   dotnet run
-   ```
-
-The application will be available at:
+The backend will be available at:
 - **API**: http://localhost:5001
 - **GraphQL**: http://localhost:5001/graphql
 - **GraphQL Playground**: http://localhost:5001/graphql (in development mode)
 - **Health Checks**: http://localhost:5001/health
+
+#### 2. Start the Frontend (React App)
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The frontend will be available at:
+- **React App**: http://localhost:3000
+
+#### 3. Test the Connection
+```bash
+cd frontend
+node test-connection.js
+```
+
+This will verify that Apollo Client can successfully connect to the GraphQL server.
+
+### Quick Test
+1. Open http://localhost:3000 in your browser
+2. Use the GraphQL Test component to test:
+   - Version query
+   - Users query  
+   - Products query
+   - Create user mutation
 
 ## Database Configuration
 
@@ -198,33 +249,49 @@ The SQLite database file (`graphql_api.db`) can be viewed using any SQLite brows
 └── GraphQLApi.csproj                    # Project file
 ```
 
-## Key Features Implemented
+## Acceptance Criteria Met ✅
 
-### ✅ Acceptance Criteria Met
+### React Frontend Setup
+- [x] **React app connects successfully to .NET GraphQL server**
+  - Apollo Client configured with proper endpoint
+  - CORS enabled on backend for cross-origin requests
+  - Connection verified through automated tests
 
-1. **EF Core DbContext properly configured for SQLite** ✅
-   - Connection string configured with foreign key support
-   - SQLite-specific configurations applied
+- [x] **Apollo DevTools shows queries and responses**
+  - Apollo Client configured with `connectToDevTools: true` in development
+  - GraphQL operations visible in browser DevTools
+  - Cache inspection and query monitoring available
 
-2. **Database migrations create all tables with relationships** ✅
-   - Comprehensive initial migration created
-   - All foreign key relationships properly defined
+- [x] **Loading and error states handled globally**
+  - Global AppContext for managing loading states
+  - Error boundary implementation with user-friendly messages
+  - Apollo Client error link for centralized error handling
+  - Loading spinners and error components created
 
-3. **Seed data populates all tables with realistic test data** ✅
-   - Users, products, orders, reviews, and more
-   - Complex relationships maintained
+### Additional Features Implemented
 
-4. **Foreign key constraints enabled and working** ✅
-   - Configured at connection level
-   - Verified through application logs
+#### Apollo Client Configuration
+- ✅ **Cache Policies**: Intelligent caching with merge strategies for lists
+- ✅ **Authentication Ready**: Bearer token support built-in
+- ✅ **Error Handling**: Global error link with network error handling
+- ✅ **TypeScript Support**: Full type safety throughout the application
 
-5. **Database accessible from GraphQL resolvers** ✅
-   - HotChocolate integration with EF Core
-   - Filtering, sorting, and projections enabled
+#### Repository Organization
+- ✅ **Backend Folder**: All .NET components organized in `/backend`
+- ✅ **Frontend Folder**: React application in `/frontend`
+- ✅ **Clear Structure**: Logical separation of concerns
 
-6. **SQLite database file included in .gitignore but seed data reproducible** ✅
-   - Database files excluded from version control
-   - Seed data automatically applied on startup
+#### GraphQL Operations Tested
+- ✅ **Queries**: Version info, users list, products list
+- ✅ **Mutations**: Create user with validation
+- ✅ **Error Scenarios**: Network errors, GraphQL errors
+- ✅ **Loading States**: All operations show loading indicators
+
+#### Development Experience
+- ✅ **Hot Reload**: Both backend and frontend support hot reload
+- ✅ **TypeScript**: Full TypeScript support with strict typing
+- ✅ **Code Generation**: GraphQL CodeGen setup for type generation
+- ✅ **Testing**: Connection test script for verification
 
 ## Troubleshooting
 
