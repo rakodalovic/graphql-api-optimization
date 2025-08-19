@@ -13,8 +13,8 @@ export const GET_VERSION = gql`
 
 // Query to get all users
 export const GET_USERS = gql`
-  query GetUsers($first: Int, $after: String) {
-    users(first: $first, after: $after) {
+  query GetUsers {
+    users {
       id
       firstName
       lastName
@@ -53,8 +53,8 @@ export const GET_USER = gql`
 
 // Query to get all products
 export const GET_PRODUCTS = gql`
-  query GetProducts($first: Int, $after: String) {
-    products(first: $first, after: $after) {
+  query GetProducts {
+    products {
       id
       name
       description
