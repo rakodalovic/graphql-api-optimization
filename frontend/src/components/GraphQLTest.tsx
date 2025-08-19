@@ -33,7 +33,6 @@ const GraphQLTest: React.FC = () => {
     error: usersError,
     refetch: refetchUsers 
   } = useQuery(GET_USERS, {
-    variables: { first: 10 },
     skip: activeTab !== 'users'
   });
 
@@ -43,7 +42,6 @@ const GraphQLTest: React.FC = () => {
     error: productsError,
     refetch: refetchProducts 
   } = useQuery(GET_PRODUCTS, {
-    variables: { first: 10 },
     skip: activeTab !== 'products'
   });
 
