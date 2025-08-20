@@ -85,7 +85,7 @@ export const GET_PRODUCT = gql`
       }
       images {
         id
-        url
+        imageUrl
         altText
         isPrimary
       }

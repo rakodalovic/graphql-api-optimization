@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
-import { GET_VERSION, GET_USERS, GET_PRODUCTS } from '../graphql/queries';
-import { CREATE_USER } from '../graphql/mutations';
+import { 
+  useGetVersionQuery, 
+  useGetUsersQuery, 
+  useGetProductsQuery,
+  useCreateUserMutation,
+  CreateUserInput
+} from '../generated/graphql';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import './GraphQLTest.css';
 
 const GraphQLTest: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'version' | 'users' | 'products' | 'createUser'>('version');
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<CreateUserInput>({
     firstName: '',
     lastName: '',
     email: '',
     username: '',
     password: '',
-    phoneNumber: ''
+    phoneNumber: null
   });
 
   // Query hooks
@@ -23,7 +27,7 @@ const GraphQLTest: React.FC = () => {
     loading: versionLoading, 
     error: versionError,
     refetch: refetchVersion 
-  } = useQuery(GET_VERSION, {
+  } = useGetVersionQuery({
     skip: activeTab !== 'version'
   });
 
@@ -32,7 +36,7 @@ const GraphQLTest: React.FC = () => {
     loading: usersLoading, 
     error: usersError,
     refetch: refetchUsers 
-  } = useQuery(GET_USERS, {
+  } = useGetUsersQuery({
     skip: activeTab !== 'users'
   });
 
@@ -41,7 +45,7 @@ const GraphQLTest: React.FC = () => {
     loading: productsLoading, 
     error: productsError,
     refetch: refetchProducts 
-  } = useQuery(GET_PRODUCTS, {
+  } = useGetProductsQuery({
     skip: activeTab !== 'products'
   });
 
@@ -50,7 +54,7 @@ const GraphQLTest: React.FC = () => {
     loading: createUserLoading, 
     error: createUserError,
     data: createUserData 
-  }] = useMutation(CREATE_USER, {
+  }] = useCreateUserMutation({
     onCompleted: () => {
       setNewUser({
         firstName: '',
@@ -58,7 +62,7 @@ const GraphQLTest: React.FC = () => {
         email: '',
         username: '',
         password: '',
-        phoneNumber: ''
+        phoneNumber: null
       });
     }
   });
@@ -80,7 +84,7 @@ const GraphQLTest: React.FC = () => {
     const { name, value } = e.target;
     setNewUser(prev => ({
       ...prev,
-      [name]: value
+      [name]: value === '' && name === 'phoneNumber' ? null : value
     }));
   };
 
@@ -119,7 +123,7 @@ const GraphQLTest: React.FC = () => {
           <div className="tab-content">
             <h3>Users ({usersData?.users?.length || 0})</h3>
             <div className="data-list">
-              {usersData?.users?.map((user: any) => (
+              {usersData?.users?.map((user) => (
                 <div key={user.id} className="data-item">
                   <h4>{user.firstName} {user.lastName}</h4>
                   <p>Email: {user.email}</p>
@@ -144,7 +148,7 @@ const GraphQLTest: React.FC = () => {
           <div className="tab-content">
             <h3>Products ({productsData?.products?.length || 0})</h3>
             <div className="data-list">
-              {productsData?.products?.map((product: any) => (
+              {productsData?.products?.map((product) => (
                 <div key={product.id} className="data-item">
                   <h4>{product.name}</h4>
                   <p>{product.description}</p>
@@ -223,7 +227,7 @@ const GraphQLTest: React.FC = () => {
                   type="tel"
                   id="phoneNumber"
                   name="phoneNumber"
-                  value={newUser.phoneNumber}
+                  value={newUser.phoneNumber || ''}
                   onChange={handleInputChange}
                 />
               </div>
