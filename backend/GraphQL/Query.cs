@@ -22,6 +22,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<User> GetUsers([Service] ApplicationDbContext context)
         => context.Users.Where(u => u.IsActive);
 
@@ -39,6 +40,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
         => context.Products.Where(p => p.IsActive);
 
@@ -56,6 +58,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Category> GetCategories([Service] ApplicationDbContext context)
         => context.Categories.Where(c => c.IsActive);
 
@@ -72,6 +75,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Order> GetOrders([Service] ApplicationDbContext context)
         => context.Orders;
 
@@ -91,6 +95,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Review> GetReviews([Service] ApplicationDbContext context)
         => context.Reviews.Where(r => r.IsApproved);
 
@@ -109,6 +114,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Models.Tag> GetTags([Service] ApplicationDbContext context)
         => context.Tags.Where(t => t.IsActive);
 
@@ -117,6 +123,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<Notification> GetNotifications([Service] ApplicationDbContext context, int userId)
         => context.Notifications.Where(n => n.UserId == userId && !n.IsArchived);
 
@@ -189,6 +196,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<CreditCardPayment> GetCreditCardPayments([Service] ApplicationDbContext context)
         => context.CreditCardPayments;
 
@@ -196,6 +204,7 @@ public class Query
     [UseProjection]
     [UseFiltering]
     [UseSorting]
+    [UsePaging]
     public IQueryable<PaypalPayment> GetPaypalPayments([Service] ApplicationDbContext context)
         => context.PaypalPayments;
 

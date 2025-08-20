@@ -18,7 +18,7 @@ function App() {
     <ApolloProvider client={apolloClient}>
       <AuthProvider>
         <AppProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <div className="App">
               <Navigation />
               <Routes>
