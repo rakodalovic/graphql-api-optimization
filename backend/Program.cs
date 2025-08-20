@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Serilog;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -73,6 +76,30 @@ try
                 .AllowAnyHeader();
         });
     });
+
+    // Configure JWT Authentication
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    var secretKey = jwtSettings["SecretKey"] ?? "YourDefaultSecretKeyThatIsAtLeast32CharactersLong";
+    var issuer = jwtSettings["Issuer"] ?? "GraphQLApi";
+    var audience = jwtSettings["Audience"] ?? "GraphQLApi";
+
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = issuer,
+                ValidAudience = audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey)),
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
+    builder.Services.AddAuthorization();
 
     // Add Health Checks
     builder.Services.AddHealthChecks()
@@ -177,6 +204,10 @@ try
 
     // Use CORS
     app.UseCors("GraphQLPolicy");
+
+    // Use Authentication and Authorization
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     // Add WebSocket support for subscriptions
     app.UseWebSockets();

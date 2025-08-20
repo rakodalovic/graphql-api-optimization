@@ -1,5 +1,6 @@
 using GraphQLApi.Models;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace GraphQLApi.Data.Seed;
 
@@ -158,7 +159,7 @@ public static class SeedData
                 LastName = "Doe",
                 Email = "john.doe@example.com",
                 Username = "johndoe",
-                PasswordHash = "hashed_password_here", // In real app, use proper password hashing
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"), // Password: password123
                 IsActive = true,
                 EmailConfirmed = true
             },
@@ -168,7 +169,7 @@ public static class SeedData
                 LastName = "Smith",
                 Email = "jane.smith@example.com",
                 Username = "janesmith",
-                PasswordHash = "hashed_password_here",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"), // Password: password123
                 IsActive = true,
                 EmailConfirmed = true
             },
@@ -178,7 +179,7 @@ public static class SeedData
                 LastName = "User",
                 Email = "admin@example.com",
                 Username = "admin",
-                PasswordHash = "hashed_password_here",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"), // Password: admin123
                 IsActive = true,
                 EmailConfirmed = true
             }

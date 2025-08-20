@@ -3,6 +3,11 @@ using GraphQLApi.Models;
 using HotChocolate;
 using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using BCrypt.Net;
 
 namespace GraphQLApi.GraphQL;
 
@@ -36,7 +41,7 @@ public class Mutation
             LastName = input.LastName,
             Email = input.Email,
             Username = input.Username,
-            PasswordHash = input.Password,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password),
             PhoneNumber = input.PhoneNumber,
             IsActive = true,
             EmailConfirmed = false
@@ -845,6 +850,51 @@ public class Mutation
         };
     }
 
+    // Authentication mutations
+    [UseDbContext(typeof(ApplicationDbContext))]
+    public async Task<AuthPayload> Login([Service] ApplicationDbContext context, [Service] IConfiguration configuration, LoginInput input)
+    {
+        var user = await context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Email == input.Email && u.IsActive);
+
+        if (user == null)
+        {
+            return new AuthPayload
+            {
+                Success = false,
+                Message = "Invalid email or password"
+            };
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash))
+        {
+            return new AuthPayload
+            {
+                Success = false,
+                Message = "Invalid email or password"
+            };
+        }
+
+        // Update last login time
+        user.LastLoginAt = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+
+        // Generate JWT token
+        var token = GenerateJwtToken(user, configuration);
+        var expiresAt = DateTime.UtcNow.AddHours(24); // Token expires in 24 hours
+
+        return new AuthPayload
+        {
+            Token = token,
+            User = user,
+            Success = true,
+            Message = "Login successful",
+            ExpiresAt = expiresAt
+        };
+    }
+
     private static string GenerateOrderNumber()
     {
         return $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
@@ -875,6 +925,42 @@ public class Mutation
             OrderStatus.Returned => newStatus == OrderStatus.Refunded,
             _ => false
         };
+    }
+
+    private static string GenerateJwtToken(User user, IConfiguration configuration)
+    {
+        var jwtSettings = configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["SecretKey"] ?? "YourDefaultSecretKeyThatIsAtLeast32CharactersLong";
+        var issuer = jwtSettings["Issuer"] ?? "GraphQLApi";
+        var audience = jwtSettings["Audience"] ?? "GraphQLApi";
+        var expirationHours = int.Parse(jwtSettings["ExpirationHours"] ?? "24");
+
+        var key = Encoding.ASCII.GetBytes(secretKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.GivenName, user.FirstName),
+                new Claim(ClaimTypes.Surname, user.LastName)
+            }),
+            Expires = DateTime.UtcNow.AddHours(expirationHours),
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        // Add role claims
+        foreach (var userRole in user.UserRoles.Where(ur => ur.IsActive))
+        {
+            tokenDescriptor.Subject.AddClaim(new Claim(ClaimTypes.Role, userRole.Role.Name));
+        }
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 }
 
@@ -1001,6 +1087,13 @@ public record CreateNotificationInput
     public DateTime? ExpiresAt { get; init; }
 }
 
+public record LoginInput
+{
+    [GraphQLType(typeof(GraphQLApi.GraphQL.Scalars.EmailType))]
+    public string Email { get; init; } = string.Empty;
+    public string Password { get; init; } = string.Empty;
+}
+
 // Payload types
 public record UserPayload
 {
@@ -1042,6 +1135,15 @@ public record NotificationPayload
     public Notification? Notification { get; init; }
     public bool Success { get; init; }
     public string Message { get; init; } = string.Empty;
+}
+
+public record AuthPayload
+{
+    public string? Token { get; init; }
+    public User? User { get; init; }
+    public bool Success { get; init; }
+    public string Message { get; init; } = string.Empty;
+    public DateTime? ExpiresAt { get; init; }
 }
 
 // Existing types
