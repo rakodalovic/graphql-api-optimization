@@ -19,10 +19,10 @@ public class Query
 
     // User queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<User> GetUsers([Service] ApplicationDbContext context)
         => context.Users.Where(u => u.IsActive);
 
@@ -37,10 +37,10 @@ public class Query
 
     // Product queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
         => context.Products.Where(p => p.IsActive);
 
@@ -55,10 +55,10 @@ public class Query
 
     // Category queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Category> GetCategories([Service] ApplicationDbContext context)
         => context.Categories.Where(c => c.IsActive);
 
@@ -72,10 +72,10 @@ public class Query
 
     // Order queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Order> GetOrders([Service] ApplicationDbContext context)
         => context.Orders;
 
@@ -92,10 +92,10 @@ public class Query
 
     // Review queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Review> GetReviews([Service] ApplicationDbContext context)
         => context.Reviews.Where(r => r.IsApproved);
 
@@ -111,19 +111,19 @@ public class Query
 
     // Tag queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Models.Tag> GetTags([Service] ApplicationDbContext context)
         => context.Tags.Where(t => t.IsActive);
 
     // Notification queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<Notification> GetNotifications([Service] ApplicationDbContext context, int userId)
         => context.Notifications.Where(n => n.UserId == userId && !n.IsArchived);
 
@@ -193,18 +193,18 @@ public class Query
 
     // Payment method queries
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<CreditCardPayment> GetCreditCardPayments([Service] ApplicationDbContext context)
         => context.CreditCardPayments;
 
     [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
     [UseProjection]
     [UseFiltering]
     [UseSorting]
-    [UsePaging]
     public IQueryable<PaypalPayment> GetPaypalPayments([Service] ApplicationDbContext context)
         => context.PaypalPayments;
 

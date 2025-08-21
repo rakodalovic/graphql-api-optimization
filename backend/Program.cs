@@ -5,6 +5,7 @@ using GraphQLApi.GraphQL.DataLoaders;
 using GraphQLApi.GraphQL.Scalars;
 using GraphQLApi.GraphQL.Types;
 using HotChocolate.AspNetCore;
+using HotChocolate.Types.Pagination;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
@@ -129,6 +130,7 @@ try
         .AddFiltering()
         .AddSorting()
         .AddProjections()
+        .SetPagingOptions(new PagingOptions { IncludeTotalCount = true })
         .AddInMemorySubscriptions()
         .RegisterDbContext<ApplicationDbContext>(DbContextKind.Pooled)
         .ModifyRequestOptions(opt =>
