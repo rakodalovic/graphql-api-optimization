@@ -23,33 +23,51 @@ const mockVersionData: GetVersionQuery = {
 };
 
 const mockUsersData: GetUsersQuery = {
-  users: [
-    {
-      id: 1,
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      username: 'johndoe',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-  ]
+  users: {
+    nodes: [
+      {
+        id: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        username: 'johndoe',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z'
+      }
+    ],
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: 'cursor1',
+      endCursor: 'cursor1'
+    },
+    totalCount: 1
+  }
 };
 
 const mockProductsData: GetProductsQuery = {
-  products: [
-    {
-      id: 1,
-      name: 'Test Product',
-      description: 'A test product',
-      price: 99.99,
-      stockQuantity: 10,
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-  ]
+  products: {
+    nodes: [
+      {
+        id: 1,
+        name: 'Test Product',
+        description: 'A test product',
+        price: 99.99,
+        stockQuantity: 10,
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z'
+      }
+    ],
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: 'cursor1',
+      endCursor: 'cursor1'
+    },
+    totalCount: 1
+  }
 };
 
 const mockCreateUserResponse: CreateUserMutation = {

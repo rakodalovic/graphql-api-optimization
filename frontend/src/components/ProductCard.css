@@ -15,7 +15,8 @@
 .product-link {
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
@@ -64,7 +65,8 @@
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 250px);
+  min-height: 200px;
+  flex: 1;
 }
 
 .product-category {
@@ -127,7 +129,8 @@
   
   .product-info {
     padding: 1.25rem;
-    height: calc(100% - 200px);
+    min-height: 150px;
+    flex: 1;
   }
   
   .product-name {
@@ -146,7 +149,8 @@
   
   .product-info {
     padding: 1rem;
-    height: calc(100% - 180px);
+    min-height: 120px;
+    flex: 1;
   }
   
   .product-name {
