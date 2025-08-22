@@ -15,14 +15,23 @@ export const GET_VERSION = gql`
 export const GET_USERS = gql`
   query GetUsers {
     users {
-      id
-      firstName
-      lastName
-      email
-      username
-      isActive
-      createdAt
-      updatedAt
+      nodes {
+        id
+        firstName
+        lastName
+        email
+        username
+        isActive
+        createdAt
+        updatedAt
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
     }
   }
 `;

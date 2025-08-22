@@ -123,9 +123,9 @@ const ProductCatalog: React.FC = () => {
     GET_CATEGORIES
   );
 
-  const products = productsData?.products.nodes || [];
-  const categories = categoriesData?.categories.nodes || [];
-  const totalCount = productsData?.products.totalCount || 0;
+  const products = productsData?.products?.nodes || [];
+  const categories = categoriesData?.categories?.nodes || [];
+  const totalCount = productsData?.products?.totalCount || 0;
 
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
