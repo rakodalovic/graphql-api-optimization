@@ -121,9 +121,9 @@ const GraphQLTest: React.FC = () => {
         );
         return (
           <div className="tab-content">
-            <h3>Users ({usersData?.users?.nodes?.length || 0})</h3>
+            <h3>Users ({usersData?.users?.length || 0})</h3>
             <div className="data-list">
-              {usersData?.users?.nodes?.map((user) => (
+              {usersData?.users?.map((user) => (
                 <div key={user.id} className="data-item">
                   <h4>{user.firstName} {user.lastName}</h4>
                   <p>Email: {user.email}</p>
@@ -146,9 +146,9 @@ const GraphQLTest: React.FC = () => {
         );
         return (
           <div className="tab-content">
-            <h3>Products ({productsData?.products?.nodes?.length || 0})</h3>
+            <h3>Products ({productsData?.products?.length || 0})</h3>
             <div className="data-list">
-              {productsData?.products?.nodes?.map((product) => (
+              {productsData?.products?.map((product) => (
                 <div key={product.id} className="data-item">
                   <h4>{product.name}</h4>
                   <p>{product.description}</p>
