@@ -108,8 +108,8 @@ const ProductDetail: React.FC = () => {
 
   const { data: relatedData } = useQuery<RelatedProductsData>(GET_RELATED_PRODUCTS, {
     variables: {
-      categoryId: data?.product.category.id,
-      excludeProductId: data?.product.id,
+      categoryId: data?.product?.category?.id,
+      excludeProductId: data?.product?.id,
       first: 4
     },
     skip: !data?.product

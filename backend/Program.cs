@@ -126,6 +126,7 @@ try
         .AddType<OrderStatusType>()
         .AddType<PaymentStatusType>()
         .AddType<ExampleType>()
+        .AddType<ProductSortType>()
         .AddTypeExtension<UserTypeExtensions>()
         .AddFiltering()
         .AddSorting()
