@@ -3,6 +3,7 @@ using GraphQLApi.Models;
 using GraphQLApi.GraphQL.Types;
 using HotChocolate;
 using HotChocolate.Data;
+using HotChocolate.Data.Sorting;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -44,14 +45,47 @@ public class Query
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
         => context.Products.Where(p => p.IsActive);
 
+    // Products sorted by price - handles SQLite decimal sorting limitation
+    [UseDbContext(typeof(ApplicationDbContext))]
+    [UsePaging]
+    [UseProjection]
+    [UseFiltering]
+    public IQueryable<Product> GetProductsSortedByPrice([Service] ApplicationDbContext context, bool ascending = true)
+    {
+        var products = context.Products.Where(p => p.IsActive).ToList();
+        
+        if (ascending)
+        {
+            return products.OrderBy(p => p.Price).AsQueryable();
+        }
+        else
+        {
+            return products.OrderByDescending(p => p.Price).AsQueryable();
+        }
+    }
+
     [UseDbContext(typeof(ApplicationDbContext))]
     public async Task<Product?> GetProduct([Service] ApplicationDbContext context, int id)
-        => await context.Products
+    {
+        var product = await context.Products
             .Include(p => p.Category)
             .Include(p => p.Variants)
             .Include(p => p.Images)
-            .Include(p => p.Reviews.Where(r => r.IsApproved))
             .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
+
+        if (product != null)
+        {
+            // Load approved reviews separately to ensure proper initialization
+            var approvedReviews = await context.Reviews
+                .Include(r => r.User)
+                .Where(r => r.ProductId == id && r.IsApproved)
+                .ToListAsync();
+            
+            product.Reviews = approvedReviews;
+        }
+
+        return product;
+    }
 
     // Category queries
     [UseDbContext(typeof(ApplicationDbContext))]
