@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
 import { apolloClient } from './graphql/apollo-client';
 import { AppProvider } from './context/AppContext';
@@ -10,7 +10,7 @@ import HomePage from './components/HomePage';
 import ProductCatalog from './components/ProductCatalog';
 import ProductDetail from './components/ProductDetail';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import Cart from './components/Cart';
 import './App.css';
@@ -31,13 +31,14 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route 
-                    path="/dashboard" 
+                    path="/profile" 
                     element={
                       <ProtectedRoute>
-                        <Dashboard />
+                        <Profile />
                       </ProtectedRoute>
                     } 
                   />
+                  <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
                 </Routes>
               </div>
             </Router>

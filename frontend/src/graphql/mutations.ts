@@ -14,6 +14,7 @@ export const LOGIN_MUTATION = gql`
         lastName
         email
         username
+        phoneNumber
         isActive
       }
     }

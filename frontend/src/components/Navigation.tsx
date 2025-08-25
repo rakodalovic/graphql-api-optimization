@@ -60,11 +60,11 @@ const Navigation: React.FC = () => {
           {user ? (
             <div className="nav-user-menu">
               <Link 
-                to="/dashboard" 
-                className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+                to="/profile" 
+                className={`nav-link ${isActive('/profile') ? 'active' : ''}`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                Profile
               </Link>
               <button onClick={handleLogout} className="nav-logout-btn">
                 Logout
