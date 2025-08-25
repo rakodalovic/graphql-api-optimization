@@ -37,9 +37,9 @@ jest.mock('../Login', () => {
   };
 });
 
-jest.mock('../Dashboard', () => {
-  return function MockDashboard() {
-    return <div data-testid="dashboard">Dashboard</div>;
+jest.mock('../Profile', () => {
+  return function MockProfile() {
+    return <div data-testid="profile">Profile</div>;
   };
 });
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useMutation } from '@apollo/client';
-import { LOGIN_MUTATION } from '../graphql/mutations';
+import { LOGIN_MUTATION, UPDATE_USER } from '../graphql/mutations';
 
 interface User {
   id: string;
@@ -8,6 +8,7 @@ interface User {
   username: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
+  updateProfile: (profileData: Partial<User>) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [loginMutation] = useMutation(LOGIN_MUTATION);
+  const [updateUserMutation] = useMutation(UPDATE_USER);
 
   // Check for existing token on mount
   useEffect(() => {
@@ -67,7 +70,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email: data.login.user.email,
           username: data.login.user.username,
           firstName: data.login.user.firstName,
-          lastName: data.login.user.lastName
+          lastName: data.login.user.lastName,
+          phoneNumber: data.login.user.phoneNumber
         };
 
         // Store token and user data
@@ -96,13 +100,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const updateProfile = async (profileData: Partial<User>): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      return { success: false, message: 'User not authenticated' };
+    }
+
+    try {
+      setIsLoading(true);
+
+      const { data } = await updateUserMutation({
+        variables: {
+          input: {
+            id: parseInt(user.id),
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            email: profileData.email,
+            username: profileData.username,
+            phoneNumber: profileData.phoneNumber
+          }
+        }
+      });
+
+      if (data?.updateUser?.success && data.updateUser.user) {
+        const updatedUserData = {
+          id: data.updateUser.user.id,
+          email: data.updateUser.user.email,
+          username: data.updateUser.user.username,
+          firstName: data.updateUser.user.firstName,
+          lastName: data.updateUser.user.lastName,
+          phoneNumber: data.updateUser.user.phoneNumber
+        };
+
+        // Update stored user data
+        localStorage.setItem('authUser', JSON.stringify(updatedUserData));
+        setUser(updatedUserData);
+
+        return { success: true, message: data.updateUser.message || 'Profile updated successfully' };
+      } else {
+        return { success: false, message: data?.updateUser?.message || 'Profile update failed' };
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      return { success: false, message: 'An error occurred while updating profile' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
     isAuthenticated: !!user && !!token,
     isLoading,
     login,
-    logout
+    logout,
+    updateProfile
   };
 
   return (
