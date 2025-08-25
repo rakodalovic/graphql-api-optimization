@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import './Navigation.css';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { getTotalItems } = useCart();
   const location = useLocation();
+  const cartItemCount = getTotalItems();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -42,6 +45,16 @@ const Navigation: React.FC = () => {
             onClick={() => setIsMenuOpen(false)}
           >
             Catalog
+          </Link>
+          <Link 
+            to="/cart" 
+            className={`nav-link cart-link ${isActive('/cart') ? 'active' : ''}`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Cart
+            {cartItemCount > 0 && (
+              <span className="cart-badge">{cartItemCount}</span>
+            )}
           </Link>
           
           {user ? (

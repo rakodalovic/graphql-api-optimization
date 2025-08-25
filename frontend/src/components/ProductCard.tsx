@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 import './ProductCard.css';
 
 interface ProductImage {
@@ -29,6 +30,9 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const { addToCart } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+  
   const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
   const discountPercentage = hasDiscount 
@@ -40,6 +44,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       style: 'currency',
       currency: 'USD'
     }).format(price);
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation to product detail
+    e.stopPropagation();
+    
+    setIsAdding(true);
+    try {
+      addToCart(product);
+      // Add a small delay for better UX
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 500);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -92,6 +113,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </Link>
+      
+      <div className="product-actions">
+        <button 
+          className={`add-to-cart-btn ${isAdding ? 'adding' : ''}`}
+          onClick={handleAddToCart}
+          disabled={isAdding}
+        >
+          {isAdding ? 'Adding...' : 'Add to Cart'}
+        </button>
+      </div>
     </div>
   );
 };
