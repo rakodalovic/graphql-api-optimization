@@ -64,16 +64,19 @@ const ProductCatalog: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
-  // Debounce search term to avoid triggering queries on every keystroke
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms delay
+  // Handle Enter key press for search
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setActiveSearchTerm(searchTerm);
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  // Handle search button click
+  const handleSearchSubmit = () => {
+    setActiveSearchTerm(searchTerm);
+  };
 
   // Build filter and sort variables for GraphQL query
   const buildQueryVariables = () => {
@@ -85,10 +88,10 @@ const ProductCatalog: React.FC = () => {
       where.categoryId = { eq: selectedCategory };
     }
 
-    if (debouncedSearchTerm) {
+    if (activeSearchTerm) {
       where.or = [
-        { name: { contains: debouncedSearchTerm } },
-        { description: { contains: debouncedSearchTerm } }
+        { name: { contains: activeSearchTerm } },
+        { description: { contains: activeSearchTerm } }
       ];
     }
 
@@ -154,6 +157,7 @@ const ProductCatalog: React.FC = () => {
     setSelectedCategory(null);
     setPriceRange({ min: 0, max: 1000 });
     setSearchTerm('');
+    setActiveSearchTerm('');
     setSortBy('name_asc');
   };
 
@@ -184,13 +188,23 @@ const ProductCatalog: React.FC = () => {
               {/* Search */}
               <div className="filter-section">
                 <h4>Search</h4>
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
+                <div className="search-container">
+                  <input
+                    type="text"
+                    placeholder="Search products... (Press Enter to search)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    className="search-input"
+                  />
+                  <button 
+                    onClick={handleSearchSubmit}
+                    className="search-button"
+                    type="button"
+                  >
+                    Search
+                  </button>
+                </div>
               </div>
 
               {/* Categories */}

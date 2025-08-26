@@ -4,6 +4,7 @@ using GraphQLApi.GraphQL.Types;
 using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Data.Sorting;
+using HotChocolate.Resolvers;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -41,9 +42,81 @@ public class Query
     [UsePaging]
     [UseProjection]
     [UseFiltering]
-    [UseSorting]
-    public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
-        => context.Products.Where(p => p.IsActive);
+    public IQueryable<Product> GetProducts([Service] ApplicationDbContext context, IResolverContext resolverContext)
+    {
+        var products = context.Products.Where(p => p.IsActive);
+        
+        // Handle sorting manually to fix SQLite decimal ordering issues
+        var orderArgument = resolverContext.ArgumentValue<IReadOnlyList<object>>("order");
+        if (orderArgument != null && orderArgument.Count > 0)
+        {
+            // Convert to list to handle sorting in memory for SQLite decimal fields
+            var productList = products.ToList();
+            
+            foreach (var orderItem in orderArgument)
+            {
+                if (orderItem is IReadOnlyDictionary<string, object> orderDict)
+                {
+                    foreach (var kvp in orderDict)
+                    {
+                        var fieldName = kvp.Key.ToLower();
+                        var direction = kvp.Value?.ToString()?.ToUpper();
+                        
+                        switch (fieldName)
+                        {
+                            case "price":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.Price).ToList()
+                                    : productList.OrderBy(p => p.Price).ToList();
+                                break;
+                            case "compareatprice":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.CompareAtPrice ?? 0).ToList()
+                                    : productList.OrderBy(p => p.CompareAtPrice ?? 0).ToList();
+                                break;
+                            case "costprice":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.CostPrice ?? 0).ToList()
+                                    : productList.OrderBy(p => p.CostPrice ?? 0).ToList();
+                                break;
+                            case "name":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.Name).ToList()
+                                    : productList.OrderBy(p => p.Name).ToList();
+                                break;
+                            case "createdat":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.CreatedAt).ToList()
+                                    : productList.OrderBy(p => p.CreatedAt).ToList();
+                                break;
+                            case "updatedat":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.UpdatedAt).ToList()
+                                    : productList.OrderBy(p => p.UpdatedAt).ToList();
+                                break;
+                            case "stockquantity":
+                                productList = direction == "DESC" 
+                                    ? productList.OrderByDescending(p => p.StockQuantity).ToList()
+                                    : productList.OrderBy(p => p.StockQuantity).ToList();
+                                break;
+                            default:
+                                // For other fields, try to sort by name as fallback
+                                productList = productList.OrderBy(p => p.Name).ToList();
+                                break;
+                        }
+                        // Only apply the first sort order to keep it simple
+                        break;
+                    }
+                    // Only process the first order item
+                    break;
+                }
+            }
+            
+            return productList.AsQueryable();
+        }
+        
+        return products;
+    }
 
     // Products sorted by price - handles SQLite decimal sorting limitation
     [UseDbContext(typeof(ApplicationDbContext))]
