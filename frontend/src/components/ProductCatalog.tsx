@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_PRODUCTS, GET_CATEGORIES } from '../graphql/queries';
 import ProductCard from './ProductCard';
@@ -64,6 +64,16 @@ const ProductCatalog: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term to avoid triggering queries on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Build filter and sort variables for GraphQL query
   const buildQueryVariables = () => {
@@ -75,14 +85,15 @@ const ProductCatalog: React.FC = () => {
       where.categoryId = { eq: selectedCategory };
     }
 
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
       where.or = [
-        { name: { contains: searchTerm } },
-        { description: { contains: searchTerm } }
+        { name: { contains: debouncedSearchTerm } },
+        { description: { contains: debouncedSearchTerm } }
       ];
     }
 
-    if (priceRange.min > 0 || priceRange.max < 1000) {
+    // Apply price filter when range is different from default values
+    if (priceRange.min > 0 || priceRange.max !== 1000) {
       where.price = {
         gte: priceRange.min,
         lte: priceRange.max
