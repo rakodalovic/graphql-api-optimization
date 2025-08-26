@@ -28,7 +28,7 @@ const Navigation: React.FC = () => {
     <nav className="navigation">
       <div className="nav-container">
         <Link to="/" className="nav-logo">
-          <h2>GraphQL Store</h2>
+          <h2>GraphMart</h2>
         </Link>
 
         <div className={`nav-menu ${isMenuOpen ? 'active' : ''}`}>

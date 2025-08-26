@@ -46,8 +46,8 @@ const HomePage: React.FC = () => {
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
-          <h1>Welcome to GraphQL Store</h1>
-          <p>Discover amazing products with efficient GraphQL-powered data fetching</p>
+          <h1>Welcome to GraphMart</h1>
+          <p>Your premium destination for quality products with lightning-fast performance</p>
           <Link to="/catalog" className="cta-button">
             Shop Now
           </Link>
@@ -59,7 +59,7 @@ const HomePage: React.FC = () => {
         <div className="container">
           <h2>Featured Products</h2>
           <p className="section-subtitle">
-            Handpicked products showcasing GraphQL's efficiency in fetching only the data you need
+            Carefully curated products for the discerning customer
           </p>
           
           {featuredProducts.length > 0 ? (
@@ -85,23 +85,23 @@ const HomePage: React.FC = () => {
       {/* Benefits Section */}
       <section className="benefits-section">
         <div className="container">
-          <h2>Why Choose GraphQL?</h2>
+          <h2>Why Choose GraphMart?</h2>
           <div className="benefits-grid">
             <div className="benefit-card">
-              <h3>Efficient Data Fetching</h3>
-              <p>Get exactly the data you need in a single request, reducing over-fetching and under-fetching.</p>
+              <h3>Premium Quality</h3>
+              <p>Every product is carefully selected and tested to meet our high standards of quality and reliability.</p>
             </div>
             <div className="benefit-card">
-              <h3>Strong Type System</h3>
-              <p>Built with HotChocolate for .NET, providing type safety and excellent developer experience.</p>
+              <h3>Fast Delivery</h3>
+              <p>Lightning-fast shipping with real-time tracking to get your products to you as quickly as possible.</p>
             </div>
             <div className="benefit-card">
-              <h3>Real-time Updates</h3>
-              <p>Support for subscriptions enables real-time updates for better user experience.</p>
+              <h3>Expert Support</h3>
+              <p>Our knowledgeable customer service team is here to help you make the right choice.</p>
             </div>
             <div className="benefit-card">
-              <h3>Single Endpoint</h3>
-              <p>One endpoint for all your data needs, simplifying API management and client integration.</p>
+              <h3>Secure Shopping</h3>
+              <p>Shop with confidence knowing your data and payments are protected with enterprise-grade security.</p>
             </div>
           </div>
         </div>
