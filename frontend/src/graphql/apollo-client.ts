@@ -4,7 +4,7 @@ import { setContext } from '@apollo/client/link/context';
 
 // HTTP link to the GraphQL server
 const httpLink = createHttpLink({
-  uri: process.env.REACT_APP_GRAPHQL_ENDPOINT || 'http://localhost:5001/graphql',
+  uri: process.env.REACT_APP_GRAPHQL_ENDPOINT || 'http://localhost:5002/graphql',
 });
 
 // Auth link for adding authentication headers if needed
