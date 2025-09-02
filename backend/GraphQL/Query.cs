@@ -5,6 +5,7 @@ using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Data.Sorting;
 using HotChocolate.Resolvers;
+using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -37,74 +38,19 @@ public class Query
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
 
-    // Product queries with manual decimal sorting to handle SQLite limitations
+    // Product queries with custom SQLite-compatible sorting
     [UseDbContext(typeof(ApplicationDbContext))]
     [UsePaging]
     [UseProjection]
     [UseFiltering]
-    [UseSorting]
-    public IQueryable<Product> GetProducts([Service] ApplicationDbContext context, IResolverContext resolverContext)
+    public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
     {
-        var products = context.Products.Where(p => p.IsActive);
-        
-        // Check if sorting is requested
-        var orderArgument = resolverContext.ArgumentValue<IReadOnlyList<object>>("order");
-        if (orderArgument != null && orderArgument.Count > 0)
-        {
-            // Check if any decimal fields are being sorted
-            bool hasDecimalSorting = false;
-            string? decimalField = null;
-            bool isDescending = false;
-            
-            foreach (var orderItem in orderArgument)
-            {
-                if (orderItem is IReadOnlyDictionary<string, object> orderDict)
-                {
-                    foreach (var kvp in orderDict)
-                    {
-                        var fieldName = kvp.Key.ToLower();
-                        if (fieldName == "price" || fieldName == "compareatprice" || fieldName == "costprice")
-                        {
-                            hasDecimalSorting = true;
-                            decimalField = fieldName;
-                            isDescending = kvp.Value?.ToString()?.ToUpper() == "DESC";
-                            break;
-                        }
-                    }
-                    if (hasDecimalSorting) break;
-                }
-            }
-            
-            // If decimal sorting is involved, handle it manually
-            if (hasDecimalSorting && decimalField != null)
-            {
-                var productList = products.ToList();
-                
-                switch (decimalField)
-                {
-                    case "price":
-                        productList = isDescending 
-                            ? productList.OrderByDescending(p => p.Price).ToList()
-                            : productList.OrderBy(p => p.Price).ToList();
-                        break;
-                    case "compareatprice":
-                        productList = isDescending 
-                            ? productList.OrderByDescending(p => p.CompareAtPrice ?? 0).ToList()
-                            : productList.OrderBy(p => p.CompareAtPrice ?? 0).ToList();
-                        break;
-                    case "costprice":
-                        productList = isDescending 
-                            ? productList.OrderByDescending(p => p.CostPrice ?? 0).ToList()
-                            : productList.OrderBy(p => p.CostPrice ?? 0).ToList();
-                        break;
-                }
-                
-                return productList.AsQueryable();
-            }
-        }
-        
-        // For non-decimal sorting or no sorting, return the queryable to let EF handle it
-        return products;
+        // Return products with navigation properties included
+        // Note: Sorting is handled separately due to SQLite decimal limitations
+        return context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.Name); // Default sorting
     }
 
     // Products sorted by price - handles SQLite decimal sorting limitation
@@ -112,17 +58,20 @@ public class Query
     [UsePaging]
     [UseProjection]
     [UseFiltering]
-    public IQueryable<Product> GetProductsSortedByPrice([Service] ApplicationDbContext context, bool ascending = true)
+    public IQueryable<Product> GetProductsByPrice([Service] ApplicationDbContext context, bool ascending = true)
     {
-        var products = context.Products.Where(p => p.IsActive).ToList();
-        
+        var products = context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive);
+            
+        // Use double conversion to handle SQLite decimal sorting
         if (ascending)
         {
-            return products.OrderBy(p => p.Price).AsQueryable();
+            return products.OrderBy(p => (double)p.Price);
         }
         else
         {
-            return products.OrderByDescending(p => p.Price).AsQueryable();
+            return products.OrderByDescending(p => (double)p.Price);
         }
     }
 
