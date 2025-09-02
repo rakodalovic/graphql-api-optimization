@@ -39,7 +39,13 @@ const HomePage: React.FC = () => {
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error.message} />;
 
-  const featuredProducts = data?.products.nodes || [];
+  // Handle null data gracefully
+  const featuredProducts = data?.products?.nodes || [];
+  
+  // If data is null but no error occurred, show loading
+  if (!data && !loading && !error) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="home-page">

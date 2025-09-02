@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS, GET_CATEGORIES } from '../graphql/queries';
+import { GET_PRODUCTS, GET_PRODUCTS_BY_PRICE, GET_CATEGORIES } from '../graphql/queries';
 import ProductCard from './ProductCard';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
@@ -64,9 +64,22 @@ const ProductCatalog: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
 
-  // Build filter and sort variables for GraphQL query
-  const buildQueryVariables = () => {
+  // Handle Enter key press for search
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setActiveSearchTerm(searchTerm);
+    }
+  };
+
+  // Handle search button click
+  const handleSearchSubmit = () => {
+    setActiveSearchTerm(searchTerm);
+  };
+
+  // Build filter variables for GraphQL query
+  const buildWhereClause = () => {
     const where: any = {
       isActive: { eq: true }
     };
@@ -75,46 +88,44 @@ const ProductCatalog: React.FC = () => {
       where.categoryId = { eq: selectedCategory };
     }
 
-    if (searchTerm) {
+    if (activeSearchTerm) {
       where.or = [
-        { name: { contains: searchTerm } },
-        { description: { contains: searchTerm } }
+        { name: { contains: activeSearchTerm } },
+        { description: { contains: activeSearchTerm } }
       ];
     }
 
-    if (priceRange.min > 0 || priceRange.max < 1000) {
+    // Apply price filter when range is different from default values
+    if (priceRange.min > 0 || priceRange.max !== 1000) {
       where.price = {
         gte: priceRange.min,
         lte: priceRange.max
       };
     }
 
-    const order: any[] = [];
-    switch (sortBy) {
-      case 'name_asc':
-        order.push({ name: 'ASC' });
-        break;
-      case 'name_desc':
-        order.push({ name: 'DESC' });
-        break;
-      case 'price_asc':
-        order.push({ price: 'ASC' });
-        break;
-      case 'price_desc':
-        order.push({ price: 'DESC' });
-        break;
-      case 'newest':
-        order.push({ createdAt: 'DESC' });
-        break;
-    }
-
-    return { where, order, first: 24 };
+    return where;
   };
 
+  // Determine which query to use based on sorting
+  const isPriceSorting = sortBy === 'price_asc' || sortBy === 'price_desc';
+  const queryToUse = isPriceSorting ? GET_PRODUCTS_BY_PRICE : GET_PRODUCTS;
+  
+  // Build variables for the selected query
+  const queryVariables = isPriceSorting 
+    ? { 
+        where: buildWhereClause(), 
+        ascending: sortBy === 'price_asc',
+        first: 24 
+      }
+    : { 
+        where: buildWhereClause(), 
+        first: 24 
+      };
+
   const { loading: productsLoading, error: productsError, data: productsData } = useQuery<ProductsData>(
-    GET_PRODUCTS,
+    queryToUse,
     {
-      variables: buildQueryVariables(),
+      variables: queryVariables,
       fetchPolicy: 'cache-and-network'
     }
   );
@@ -126,6 +137,11 @@ const ProductCatalog: React.FC = () => {
   const products = productsData?.products?.nodes || [];
   const categories = categoriesData?.categories?.nodes || [];
   const totalCount = productsData?.products?.totalCount || 0;
+  
+  // Handle null data gracefully
+  if (!productsData && !productsLoading && !productsError) {
+    return <LoadingSpinner />;
+  }
 
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
@@ -143,6 +159,7 @@ const ProductCatalog: React.FC = () => {
     setSelectedCategory(null);
     setPriceRange({ min: 0, max: 1000 });
     setSearchTerm('');
+    setActiveSearchTerm('');
     setSortBy('name_asc');
   };
 
@@ -173,13 +190,23 @@ const ProductCatalog: React.FC = () => {
               {/* Search */}
               <div className="filter-section">
                 <h4>Search</h4>
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
+                <div className="search-container">
+                  <input
+                    type="text"
+                    placeholder="Search products... (Press Enter to search)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    className="search-input"
+                  />
+                  <button 
+                    onClick={handleSearchSubmit}
+                    className="search-button"
+                    type="button"
+                  >
+                    Search
+                  </button>
+                </div>
               </div>
 
               {/* Categories */}

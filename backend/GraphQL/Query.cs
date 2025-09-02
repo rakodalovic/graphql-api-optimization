@@ -4,6 +4,8 @@ using GraphQLApi.GraphQL.Types;
 using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Data.Sorting;
+using HotChocolate.Resolvers;
+using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -36,31 +38,40 @@ public class Query
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
 
-    // Product queries
+    // Product queries with custom SQLite-compatible sorting
     [UseDbContext(typeof(ApplicationDbContext))]
     [UsePaging]
     [UseProjection]
     [UseFiltering]
-    [UseSorting]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
-        => context.Products.Where(p => p.IsActive);
+    {
+        // Return products with navigation properties included
+        // Note: Sorting is handled separately due to SQLite decimal limitations
+        return context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.Name); // Default sorting
+    }
 
     // Products sorted by price - handles SQLite decimal sorting limitation
     [UseDbContext(typeof(ApplicationDbContext))]
     [UsePaging]
     [UseProjection]
     [UseFiltering]
-    public IQueryable<Product> GetProductsSortedByPrice([Service] ApplicationDbContext context, bool ascending = true)
+    public IQueryable<Product> GetProductsByPrice([Service] ApplicationDbContext context, bool ascending = true)
     {
-        var products = context.Products.Where(p => p.IsActive).ToList();
-        
+        var products = context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive);
+            
+        // Use double conversion to handle SQLite decimal sorting
         if (ascending)
         {
-            return products.OrderBy(p => p.Price).AsQueryable();
+            return products.OrderBy(p => (double)p.Price);
         }
         else
         {
-            return products.OrderByDescending(p => p.Price).AsQueryable();
+            return products.OrderByDescending(p => (double)p.Price);
         }
     }
 

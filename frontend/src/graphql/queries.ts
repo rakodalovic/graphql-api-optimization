@@ -60,15 +60,14 @@ export const GET_USER = gql`
   }
 `;
 
-// Query to get all products with filtering, sorting, and pagination
+// Query to get all products with filtering and pagination
 export const GET_PRODUCTS = gql`
   query GetProducts(
     $where: ProductFilterInput
-    $order: [ProductSortInput!]
     $first: Int
     $after: String
   ) {
-    products(where: $where, order: $order, first: $first, after: $after) {
+    products(where: $where, first: $first, after: $after) {
       nodes {
         id
         name
@@ -204,6 +203,57 @@ export const GET_PRODUCT = gql`
           lastName
         }
       }
+    }
+  }
+`;
+
+// Query to get products sorted by price (handles SQLite decimal sorting)
+export const GET_PRODUCTS_BY_PRICE = gql`
+  query GetProductsByPrice(
+    $ascending: Boolean = true
+    $where: ProductFilterInput
+    $first: Int
+    $after: String
+  ) {
+    productsByPrice(ascending: $ascending, where: $where, first: $first, after: $after) {
+      nodes {
+        id
+        name
+        description
+        sku
+        price
+        compareAtPrice
+        stockQuantity
+        isActive
+        isFeatured
+        createdAt
+        updatedAt
+        category {
+          id
+          name
+          slug
+        }
+        images {
+          id
+          imageUrl
+          altText
+          isPrimary
+          sortOrder
+        }
+        variants {
+          id
+          name
+          price
+          stockQuantity
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
     }
   }
 `;
