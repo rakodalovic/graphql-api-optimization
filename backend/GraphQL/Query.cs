@@ -37,21 +37,24 @@ public class Query
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
 
-    // Product queries
+    // Product queries with manual decimal sorting to handle SQLite limitations
     [UseDbContext(typeof(ApplicationDbContext))]
     [UsePaging]
     [UseProjection]
     [UseFiltering]
+    [UseSorting]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context, IResolverContext resolverContext)
     {
         var products = context.Products.Where(p => p.IsActive);
         
-        // Handle sorting manually to fix SQLite decimal ordering issues
+        // Check if sorting is requested
         var orderArgument = resolverContext.ArgumentValue<IReadOnlyList<object>>("order");
         if (orderArgument != null && orderArgument.Count > 0)
         {
-            // Convert to list to handle sorting in memory for SQLite decimal fields
-            var productList = products.ToList();
+            // Check if any decimal fields are being sorted
+            bool hasDecimalSorting = false;
+            string? decimalField = null;
+            bool isDescending = false;
             
             foreach (var orderItem in orderArgument)
             {
@@ -60,61 +63,47 @@ public class Query
                     foreach (var kvp in orderDict)
                     {
                         var fieldName = kvp.Key.ToLower();
-                        var direction = kvp.Value?.ToString()?.ToUpper();
-                        
-                        switch (fieldName)
+                        if (fieldName == "price" || fieldName == "compareatprice" || fieldName == "costprice")
                         {
-                            case "price":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.Price).ToList()
-                                    : productList.OrderBy(p => p.Price).ToList();
-                                break;
-                            case "compareatprice":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.CompareAtPrice ?? 0).ToList()
-                                    : productList.OrderBy(p => p.CompareAtPrice ?? 0).ToList();
-                                break;
-                            case "costprice":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.CostPrice ?? 0).ToList()
-                                    : productList.OrderBy(p => p.CostPrice ?? 0).ToList();
-                                break;
-                            case "name":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.Name).ToList()
-                                    : productList.OrderBy(p => p.Name).ToList();
-                                break;
-                            case "createdat":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.CreatedAt).ToList()
-                                    : productList.OrderBy(p => p.CreatedAt).ToList();
-                                break;
-                            case "updatedat":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.UpdatedAt).ToList()
-                                    : productList.OrderBy(p => p.UpdatedAt).ToList();
-                                break;
-                            case "stockquantity":
-                                productList = direction == "DESC" 
-                                    ? productList.OrderByDescending(p => p.StockQuantity).ToList()
-                                    : productList.OrderBy(p => p.StockQuantity).ToList();
-                                break;
-                            default:
-                                // For other fields, try to sort by name as fallback
-                                productList = productList.OrderBy(p => p.Name).ToList();
-                                break;
+                            hasDecimalSorting = true;
+                            decimalField = fieldName;
+                            isDescending = kvp.Value?.ToString()?.ToUpper() == "DESC";
+                            break;
                         }
-                        // Only apply the first sort order to keep it simple
-                        break;
                     }
-                    // Only process the first order item
-                    break;
+                    if (hasDecimalSorting) break;
                 }
             }
             
-            return productList.AsQueryable();
+            // If decimal sorting is involved, handle it manually
+            if (hasDecimalSorting && decimalField != null)
+            {
+                var productList = products.ToList();
+                
+                switch (decimalField)
+                {
+                    case "price":
+                        productList = isDescending 
+                            ? productList.OrderByDescending(p => p.Price).ToList()
+                            : productList.OrderBy(p => p.Price).ToList();
+                        break;
+                    case "compareatprice":
+                        productList = isDescending 
+                            ? productList.OrderByDescending(p => p.CompareAtPrice ?? 0).ToList()
+                            : productList.OrderBy(p => p.CompareAtPrice ?? 0).ToList();
+                        break;
+                    case "costprice":
+                        productList = isDescending 
+                            ? productList.OrderByDescending(p => p.CostPrice ?? 0).ToList()
+                            : productList.OrderBy(p => p.CostPrice ?? 0).ToList();
+                        break;
+                }
+                
+                return productList.AsQueryable();
+            }
         }
         
+        // For non-decimal sorting or no sorting, return the queryable to let EF handle it
         return products;
     }
 

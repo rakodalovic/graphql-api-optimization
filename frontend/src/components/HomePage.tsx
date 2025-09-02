@@ -39,7 +39,7 @@ const HomePage: React.FC = () => {
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error.message} />;
 
-  const featuredProducts = data?.products.nodes || [];
+  const featuredProducts = data?.products?.nodes || [];
 
   return (
     <div className="home-page">
