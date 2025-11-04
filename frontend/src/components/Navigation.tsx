@@ -39,15 +39,15 @@ const Navigation: React.FC = () => {
           >
             Home
           </Link>
-          <Link 
-            to="/catalog" 
+          <Link
+            to="/catalog"
             className={`nav-link ${isActive('/catalog') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             Catalog
           </Link>
-          <Link 
-            to="/cart" 
+          <Link
+            to="/cart"
             className={`nav-link cart-link ${isActive('/cart') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
@@ -56,28 +56,44 @@ const Navigation: React.FC = () => {
               <span className="cart-badge">{cartItemCount}</span>
             )}
           </Link>
-          
+
           {user ? (
             <div className="nav-user-menu">
-              <Link 
-                to="/profile" 
+              <Link
+                to="/profile"
                 className={`nav-link ${isActive('/profile') ? 'active' : ''}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Profile
+              </Link>
+              <Link
+                to="/comparison"
+                className={`nav-link ${isActive('/comparison') ? 'active' : ''}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                GraphQL vs REST
               </Link>
               <button onClick={handleLogout} className="nav-logout-btn">
                 Logout
               </button>
             </div>
           ) : (
-            <Link 
-              to="/login" 
-              className={`nav-link ${isActive('/login') ? 'active' : ''}`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Login
-            </Link>
+            <>
+              <Link
+                to="/comparison"
+                className={`nav-link ${isActive('/comparison') ? 'active' : ''}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                GraphQL vs REST
+              </Link>
+              <Link
+                to="/login"
+                className={`nav-link ${isActive('/login') ? 'active' : ''}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Login
+              </Link>
+            </>
           )}
         </div>
 
