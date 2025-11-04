@@ -93,10 +93,12 @@
   display: flex;
   gap: 0.5rem;
   align-items: stretch;
+  width: 100%;
 }
 
 .search-input {
   flex: 1;
+  min-width: 0;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -111,7 +113,7 @@
 }
 
 .search-button {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.75rem;
   background-color: #007bff;
   color: white;
   border: none;
@@ -119,6 +121,8 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .search-button:hover {
@@ -267,21 +271,67 @@
 
 .products-container.list .product-card {
   display: flex;
-  height: 200px;
+  flex-direction: row;
+  height: 220px;
+}
+
+.products-container.list .product-link {
+  flex-direction: row;
+  flex: 1;
 }
 
 .products-container.list .product-image-container {
-  width: 200px;
+  width: 220px;
   height: 100%;
   flex-shrink: 0;
 }
 
 .products-container.list .product-info {
   flex: 1;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  min-height: auto;
+  padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.products-container.list .product-name {
+  font-size: 1.3rem;
+  margin: 0;
+  -webkit-line-clamp: 2;
+}
+
+.products-container.list .product-description {
+  font-size: 0.9rem;
+  margin: 0;
+  flex-grow: 1;
+  -webkit-line-clamp: 2;
+  line-height: 1.5;
+}
+
+.products-container.list .product-pricing {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.products-container.list .current-price {
+  font-size: 1.1rem;
+}
+
+.products-container.list .original-price {
+  font-size: 0.9rem;
+}
+
+.products-container.list .product-actions {
+  width: auto;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-top: none;
+  border-left: 1px solid #f0f0f0;
 }
 
 .no-products {
