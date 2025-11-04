@@ -64,10 +64,11 @@ export const GET_USER = gql`
 export const GET_PRODUCTS = gql`
   query GetProducts(
     $where: ProductFilterInput
+    $order: [ProductSortInput!]
     $first: Int
     $after: String
   ) {
-    products(where: $where, first: $first, after: $after) {
+    products(where: $where, order: $order, first: $first, after: $after) {
       nodes {
         id
         name
