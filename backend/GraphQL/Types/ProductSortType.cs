@@ -7,7 +7,7 @@ public class ProductSortType : SortInputType<Product>
 {
     protected override void Configure(ISortInputTypeDescriptor<Product> descriptor)
     {
-        // Configure all fields including decimal fields
+        // Configure sortable fields (excluding decimal fields due to SQLite limitation)
         descriptor.Field(p => p.Id);
         descriptor.Field(p => p.Name);
         descriptor.Field(p => p.CreatedAt);
@@ -15,10 +15,9 @@ public class ProductSortType : SortInputType<Product>
         descriptor.Field(p => p.StockQuantity);
         descriptor.Field(p => p.IsActive);
         descriptor.Field(p => p.IsFeatured);
-        
-        // Include decimal fields - sorting will be handled manually in the resolver
-        descriptor.Field(p => p.Price);
-        descriptor.Field(p => p.CompareAtPrice);
-        descriptor.Field(p => p.CostPrice);
+
+        // Decimal fields (Price, CompareAtPrice, CostPrice) are NOT included here
+        // because SQLite doesn't support sorting by decimal type.
+        // Use the productsByPrice query instead for price-based sorting.
     }
 }

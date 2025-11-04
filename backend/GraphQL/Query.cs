@@ -43,14 +43,14 @@ public class Query
     [UsePaging]
     [UseProjection]
     [UseFiltering]
+    [UseSorting]
     public IQueryable<Product> GetProducts([Service] ApplicationDbContext context)
     {
         // Return products with navigation properties included
-        // Note: Sorting is handled separately due to SQLite decimal limitations
+        // Sorting is now handled by [UseSorting] attribute
         return context.Products
             .Include(p => p.Category)
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.Name); // Default sorting
+            .Where(p => p.IsActive);
     }
 
     // Products sorted by price - handles SQLite decimal sorting limitation

@@ -49,6 +49,19 @@ interface ProductsData {
   };
 }
 
+interface ProductsByPriceData {
+  productsByPrice: {
+    nodes: Product[];
+    pageInfo: {
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor: string;
+      endCursor: string;
+    };
+    totalCount: number;
+  };
+}
+
 interface CategoriesData {
   categories: {
     nodes: Category[];
@@ -109,20 +122,35 @@ const ProductCatalog: React.FC = () => {
   // Determine which query to use based on sorting
   const isPriceSorting = sortBy === 'price_asc' || sortBy === 'price_desc';
   const queryToUse = isPriceSorting ? GET_PRODUCTS_BY_PRICE : GET_PRODUCTS;
-  
+
+  // Build order parameter for name and date sorting
+  const getOrderParam = () => {
+    switch (sortBy) {
+      case 'name_asc':
+        return [{ name: 'ASC' }];
+      case 'name_desc':
+        return [{ name: 'DESC' }];
+      case 'newest':
+        return [{ createdAt: 'DESC' }];
+      default:
+        return undefined;
+    }
+  };
+
   // Build variables for the selected query
-  const queryVariables = isPriceSorting 
-    ? { 
-        where: buildWhereClause(), 
+  const queryVariables = isPriceSorting
+    ? {
+        where: buildWhereClause(),
         ascending: sortBy === 'price_asc',
-        first: 24 
+        first: 24
       }
-    : { 
-        where: buildWhereClause(), 
-        first: 24 
+    : {
+        where: buildWhereClause(),
+        order: getOrderParam(),
+        first: 24
       };
 
-  const { loading: productsLoading, error: productsError, data: productsData } = useQuery<ProductsData>(
+  const { loading: productsLoading, error: productsError, data: productsData } = useQuery<ProductsData | ProductsByPriceData>(
     queryToUse,
     {
       variables: queryVariables,
@@ -134,9 +162,14 @@ const ProductCatalog: React.FC = () => {
     GET_CATEGORIES
   );
 
-  const products = productsData?.products?.nodes || [];
+  // Extract products from the correct field based on which query was used
+  const products: Product[] = isPriceSorting
+    ? (productsData as ProductsByPriceData)?.productsByPrice?.nodes || []
+    : (productsData as ProductsData)?.products?.nodes || [];
   const categories = categoriesData?.categories?.nodes || [];
-  const totalCount = productsData?.products?.totalCount || 0;
+  const totalCount = isPriceSorting
+    ? (productsData as ProductsByPriceData)?.productsByPrice?.totalCount || 0
+    : (productsData as ProductsData)?.products?.totalCount || 0;
   
   // Handle null data gracefully
   if (!productsData && !productsLoading && !productsError) {
@@ -306,7 +339,7 @@ const ProductCatalog: React.FC = () => {
               {/* Products Grid/List */}
               {products.length > 0 ? (
                 <div className={`products-container ${viewMode}`}>
-                  {products.map((product) => (
+                  {products.map((product: Product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
