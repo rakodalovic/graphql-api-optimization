@@ -13,6 +13,7 @@ import Login from './components/Login';
 import Profile from './components/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import Cart from './components/Cart';
+import ComparisonPage from './pages/Comparison/ComparisonPage';
 import './App.css';
 
 function App() {
@@ -28,15 +29,16 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/catalog" element={<ProductCatalog />} />
                   <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/comparison" element={<ComparisonPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/cart" element={<Cart />} />
-                  <Route 
-                    path="/profile" 
+                  <Route
+                    path="/profile"
                     element={
                       <ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>
-                    } 
+                    }
                   />
                   <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
                 </Routes>
