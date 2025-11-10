@@ -6,6 +6,7 @@ import ProductCard from './ProductCard';
 import ReviewsList from './ReviewsList';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import { useCart } from '../context/CartContext';
 import './ProductDetail.css';
 
 interface ProductImage {
@@ -100,6 +101,8 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
 
   const { loading, error, data } = useQuery<ProductData>(GET_PRODUCT, {
     variables: { id: parseInt(id || '0') },
@@ -161,6 +164,18 @@ const ProductDetail: React.FC = () => {
       stars.push(<span key={i} className="star empty">★</span>);
     }
     return stars;
+  };
+
+  const handleAddToCart = () => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity >= 1 && newQuantity <= currentStock) {
+      setQuantity(newQuantity);
+    }
   };
 
   return (
@@ -292,6 +307,45 @@ const ProductDetail: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Add to Cart */}
+              <div className="add-to-cart-section">
+                <div className="quantity-selector">
+                  <label htmlFor="quantity">Quantity:</label>
+                  <div className="quantity-controls">
+                    <button
+                      className="quantity-btn"
+                      onClick={() => handleQuantityChange(quantity - 1)}
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      max={currentStock}
+                      value={quantity}
+                      onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                      className="quantity-input"
+                    />
+                    <button
+                      className="quantity-btn"
+                      onClick={() => handleQuantityChange(quantity + 1)}
+                      disabled={quantity >= currentStock}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <button
+                  className="add-to-cart-btn"
+                  onClick={handleAddToCart}
+                  disabled={currentStock === 0}
+                >
+                  {currentStock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                </button>
+              </div>
 
               {/* Description */}
               {product.description && (
