@@ -380,36 +380,36 @@ public static class SeedData
             },
             new()
             {
-                Name = "Classic Denim Jacket",
-                Description = "A timeless classic that never goes out of style. This premium denim jacket is crafted from high-quality cotton denim with authentic vintage wash and durable construction.",
-                Sku = "DENIMJACKET-M",
+                Name = "Elegant Colorful Shirts",
+                Description = "Add a vibrant touch to your wardrobe with these elegant colorful shirts. Featuring premium fabric, modern fit, and eye-catching colors perfect for casual and semi-formal occasions.",
+                Sku = "COLORSHIRTS-M",
                 Price = 129.99m,
                 StockQuantity = 45,
                 IsActive = true,
                 IsFeatured = true,
                 CategoryId = mensClothingCategory.Id,
-                Weight = 0.8m,
+                Weight = 0.3m,
                 WeightUnit = "kg",
-                MetaTitle = "Classic Men's Denim Jacket",
-                MetaDescription = "Timeless denim jacket with premium quality construction"
+                MetaTitle = "Elegant Men's Colorful Shirts",
+                MetaDescription = "Vibrant and elegant shirts for modern men"
             },
             
             // Clothing - Women's
             new()
             {
-                Name = "Elegant Silk Blouse",
-                Description = "Sophisticated and versatile, this silk blouse is perfect for both office and evening wear. Made from 100% mulberry silk with a flattering cut that complements any figure.",
-                Sku = "SILKBLOUSE-W",
+                Name = "Elegant Leather Jacket",
+                Description = "Timeless and sophisticated, this leather jacket combines classic style with modern elegance. Made from premium genuine leather with impeccable craftsmanship, perfect for adding an edgy yet refined touch to any outfit.",
+                Sku = "LEATHERJACKET-W",
                 Price = 159.99m,
                 CompareAtPrice = 199.99m,
                 StockQuantity = 30,
                 IsActive = true,
                 IsFeatured = true,
                 CategoryId = womensClothingCategory.Id,
-                Weight = 0.15m,
+                Weight = 0.8m,
                 WeightUnit = "kg",
-                MetaTitle = "Elegant Women's Silk Blouse",
-                MetaDescription = "Premium silk blouse perfect for professional and evening wear"
+                MetaTitle = "Elegant Women's Leather Jacket",
+                MetaDescription = "Premium leather jacket with timeless style and modern elegance"
             },
             
             // Books
@@ -502,8 +502,8 @@ public static class SeedData
         var dell = await context.Products.FirstAsync(p => p.Sku == "DELLXPS13PLUS");
         var asus = await context.Products.FirstAsync(p => p.Sku == "ASUSROG4070");
         var tshirt = await context.Products.FirstAsync(p => p.Sku == "PREMIUMTEE-M");
-        var jacket = await context.Products.FirstAsync(p => p.Sku == "DENIMJACKET-M");
-        var blouse = await context.Products.FirstAsync(p => p.Sku == "SILKBLOUSE-W");
+        var colorfulShirts = await context.Products.FirstAsync(p => p.Sku == "COLORSHIRTS-M");
+        var leatherJacket = await context.Products.FirstAsync(p => p.Sku == "LEATHERJACKET-W");
         var book = await context.Products.FirstAsync(p => p.Sku == "CLEANCODE-BOOK");
         var camera = await context.Products.FirstAsync(p => p.Sku == "SMARTCAM4K");
 
@@ -603,22 +603,22 @@ public static class SeedData
                 SortOrder = 1
             },
 
-            // Denim Jacket Images
+            // Colorful Shirts Images
             new()
             {
-                ProductId = jacket.Id,
-                ImageUrl = "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=500&h=500&fit=crop&crop=center",
-                AltText = "Classic Men's Denim Jacket",
+                ProductId = colorfulShirts.Id,
+                ImageUrl = "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=670&fit=crop",
+                AltText = "Elegant Colorful Shirts for Men",
                 IsPrimary = true,
                 SortOrder = 1
             },
 
-            // Silk Blouse Images
+            // Leather Jacket Images
             new()
             {
-                ProductId = blouse.Id,
-                ImageUrl = "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=500&fit=crop&crop=center",
-                AltText = "Elegant Women's Silk Blouse",
+                ProductId = leatherJacket.Id,
+                ImageUrl = "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=487&fit=crop",
+                AltText = "Elegant Women's Leather Jacket",
                 IsPrimary = true,
                 SortOrder = 1
             },
@@ -637,7 +637,7 @@ public static class SeedData
             new()
             {
                 ProductId = camera.Id,
-                ImageUrl = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop&crop=center",
+                ImageUrl = "https://images.unsplash.com/photo-1528312635006-8ea0bc49ec63?w=500&fit=crop",
                 AltText = "4K Smart Home Security Camera",
                 IsPrimary = true,
                 SortOrder = 1
@@ -750,8 +750,8 @@ public static class SeedData
         var iphone = await context.Products.FirstAsync(p => p.Sku == "IPHONE15PRO");
         var galaxy = await context.Products.FirstAsync(p => p.Sku == "GALAXYS24ULTRA");
         var macbook = await context.Products.FirstAsync(p => p.Sku == "MBP16M3");
-        var jacket = await context.Products.FirstAsync(p => p.Sku == "DENIMJACKET-M");
-        var blouse = await context.Products.FirstAsync(p => p.Sku == "SILKBLOUSE-W");
+        var colorfulShirtsReview = await context.Products.FirstAsync(p => p.Sku == "COLORSHIRTS-M");
+        var leatherJacketReview = await context.Products.FirstAsync(p => p.Sku == "LEATHERJACKET-W");
         var book = await context.Products.FirstAsync(p => p.Sku == "CLEANCODE-BOOK");
 
         var reviews = new List<Review>
@@ -821,23 +821,23 @@ public static class SeedData
             new()
             {
                 UserId = adminUser.Id,
-                ProductId = jacket.Id,
+                ProductId = colorfulShirtsReview.Id,
                 Rating = 5,
-                Title = "Classic style, excellent quality",
-                Comment = "This denim jacket is exactly what I was looking for. The quality of the denim is excellent, the fit is perfect, and the vintage wash looks authentic. It's become my go-to jacket for casual outings.",
+                Title = "Vibrant colors and great quality",
+                Comment = "These colorful shirts are exactly what I needed to refresh my wardrobe. The fabric quality is excellent, the fit is perfect, and the colors are even more vibrant in person. They're perfect for both casual and semi-formal occasions.",
                 IsVerifiedPurchase = true,
                 IsApproved = true,
                 ApprovedAt = DateTime.UtcNow.AddDays(-6)
             },
 
-            // Silk Blouse Reviews
+            // Leather Jacket Reviews
             new()
             {
                 UserId = janeUser.Id,
-                ProductId = blouse.Id,
+                ProductId = leatherJacketReview.Id,
                 Rating = 5,
-                Title = "Elegant and versatile",
-                Comment = "This silk blouse is absolutely beautiful. The quality of the silk is exceptional, and it drapes perfectly. I can wear it to the office or dress it up for evening events. The color is exactly as pictured.",
+                Title = "Timeless quality and style",
+                Comment = "This leather jacket is absolutely stunning. The quality of the genuine leather is exceptional, and the craftsmanship is impeccable. The elegant cut and refined details give it a sophisticated edge that works perfectly for both casual and dressy occasions. It's become my favorite piece!",
                 IsVerifiedPurchase = true,
                 IsApproved = true,
                 ApprovedAt = DateTime.UtcNow.AddDays(-4)

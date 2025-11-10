@@ -33,7 +33,7 @@ interface FeaturedProductsData {
 
 const HomePage: React.FC = () => {
   const { loading, error, data } = useQuery<FeaturedProductsData>(GET_FEATURED_PRODUCTS, {
-    variables: { first: 8 }
+    variables: { first: 4 }
   });
 
   if (loading) return <LoadingSpinner />;
