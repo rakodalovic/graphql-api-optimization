@@ -78,17 +78,21 @@ const ProductCatalog: React.FC = () => {
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [currentCursor, setCurrentCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
 
   // Handle Enter key press for search
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       setActiveSearchTerm(searchTerm);
+      resetPagination();
     }
   };
 
   // Handle search button click
   const handleSearchSubmit = () => {
     setActiveSearchTerm(searchTerm);
+    resetPagination();
   };
 
   // Build filter variables for GraphQL query
@@ -142,12 +146,14 @@ const ProductCatalog: React.FC = () => {
     ? {
       where: buildWhereClause(),
       ascending: sortBy === 'price_asc',
-      first: 24
+      first: 8,
+      after: currentCursor
     }
     : {
       where: buildWhereClause(),
       order: getOrderParam(),
-      first: 24
+      first: 8,
+      after: currentCursor
     };
 
   const { loading: productsLoading, error: productsError, data: productsData } = useQuery<ProductsData | ProductsByPriceData>(
@@ -179,16 +185,46 @@ const ProductCatalog: React.FC = () => {
     ? (productsData as ProductsByPriceData)?.productsByPrice?.totalCount || 0
     : (productsData as ProductsData)?.products?.totalCount || 0;
 
+  const pageInfo = isPriceSorting
+    ? (productsData as ProductsByPriceData)?.productsByPrice?.pageInfo
+    : (productsData as ProductsData)?.products?.pageInfo;
+
+  // Pagination handlers
+  const handleNextPage = () => {
+    if (pageInfo?.hasNextPage && pageInfo.endCursor) {
+      setCursorHistory([...cursorHistory, currentCursor || '']);
+      setCurrentCursor(pageInfo.endCursor);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (cursorHistory.length > 0) {
+      const previousCursor = cursorHistory[cursorHistory.length - 1];
+      setCursorHistory(cursorHistory.slice(0, -1));
+      setCurrentCursor(previousCursor || null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const resetPagination = () => {
+    setCurrentCursor(null);
+    setCursorHistory([]);
+  };
+
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
+    resetPagination();
   };
 
   const handleSortChange = (newSortBy: SortOption) => {
     setSortBy(newSortBy);
+    resetPagination();
   };
 
   const handlePriceRangeChange = (min: number, max: number) => {
     setPriceRange({ min, max });
+    resetPagination();
   };
 
   const clearFilters = () => {
@@ -197,6 +233,7 @@ const ProductCatalog: React.FC = () => {
     setSearchTerm('');
     setActiveSearchTerm('');
     setSortBy('name_asc');
+    resetPagination();
   };
 
   return (
@@ -374,6 +411,29 @@ const ProductCatalog: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Pagination Controls */}
+              {products.length > 0 && (
+                <div className="pagination-controls">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={cursorHistory.length === 0 || productsLoading}
+                    className="pagination-btn"
+                  >
+                    ← Previous
+                  </button>
+                  <div className="pagination-info">
+                    <span>Showing {products.length} of {totalCount} products</span>
+                  </div>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={!pageInfo?.hasNextPage || productsLoading}
+                    className="pagination-btn"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </main>
           </div>
         </div>
