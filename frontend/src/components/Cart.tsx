@@ -1,17 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useMutation } from '@apollo/client';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { CREATE_ORDER } from '../graphql/mutations';
 import './Cart.css';
 
 const Cart: React.FC = () => {
-  const { 
-    cartItems, 
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
-    getTotalItems, 
-    getTotalPrice 
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    getTotalItems,
+    getTotalPrice
   } = useCart();
+
+  const { user } = useAuth();
+  const [createOrder, { loading: orderLoading }] = useMutation(CREATE_ORDER);
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error';
+  }>({ show: false, message: '', type: 'success' });
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -25,6 +37,84 @@ const Cart: React.FC = () => {
       removeFromCart(productId);
     } else {
       updateQuantity(productId, newQuantity);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      setNotification({
+        show: true,
+        message: 'Please log in to place an order',
+        type: 'error'
+      });
+      setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setNotification({
+        show: true,
+        message: 'Your cart is empty',
+        type: 'error'
+      });
+      setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+      return;
+    }
+
+    try {
+      setIsProcessingOrder(true);
+
+      const { data } = await createOrder({
+        variables: {
+          input: {
+            userId: parseInt(user.id)
+          }
+        }
+      });
+
+      if (data?.createOrder?.success) {
+        const orderNumber = data.createOrder.order.orderNumber;
+
+        // Show processing notification
+        setNotification({
+          show: true,
+          message: 'Processing your order...',
+          type: 'success'
+        });
+
+        // After 5 seconds, show order accepted notification
+        setTimeout(() => {
+          setNotification({
+            show: true,
+            message: `Order accepted! Order number: ${orderNumber}`,
+            type: 'success'
+          });
+          setIsProcessingOrder(false);
+
+          // Hide notification and clear cart after 5 more seconds
+          setTimeout(() => {
+            setNotification({ show: false, message: '', type: 'success' });
+            clearCart();
+          }, 5000);
+        }, 5000);
+      } else {
+        setNotification({
+          show: true,
+          message: data?.createOrder?.message || 'Failed to create order',
+          type: 'error'
+        });
+        setIsProcessingOrder(false);
+        setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      setNotification({
+        show: true,
+        message: 'An error occurred while placing your order',
+        type: 'error'
+      });
+      setIsProcessingOrder(false);
+      setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
     }
   };
 
@@ -51,11 +141,16 @@ const Cart: React.FC = () => {
 
   return (
     <div className="cart-page">
+      {notification.show && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
       <div className="container">
         <div className="cart-header">
           <h1>Shopping Cart</h1>
           <div className="cart-actions">
-            <button onClick={clearCart} className="clear-cart-btn">
+            <button onClick={clearCart} className="clear-cart-btn" disabled={isProcessingOrder}>
               Clear Cart
             </button>
           </div>
@@ -142,8 +237,12 @@ const Cart: React.FC = () => {
                 <Link to="/catalog" className="continue-shopping-link">
                   Continue Shopping
                 </Link>
-                <button className="checkout-btn">
-                  Proceed to Checkout
+                <button
+                  className="checkout-btn"
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessingOrder || orderLoading}
+                >
+                  {isProcessingOrder ? 'Processing...' : 'Place Order'}
                 </button>
               </div>
             </div>

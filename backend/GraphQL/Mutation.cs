@@ -557,7 +557,7 @@ public class Mutation
 
     // Order mutations
     [UseDbContext(typeof(ApplicationDbContext))]
-    public async Task<OrderPayload> CreateOrder([Service] ApplicationDbContext context, [Service] ITopicEventSender eventSender, CreateOrderInput input)
+    public async Task<OrderPayload> CreateOrder([Service] ApplicationDbContext context, [Service] ITopicEventSender eventSender, [Service] IServiceScopeFactory scopeFactory, CreateOrderInput input)
     {
         var user = await context.Users.FindAsync(input.UserId);
         if (user == null)
@@ -649,6 +649,42 @@ public class Mutation
 
         // Publish the order created event
         await eventSender.SendAsync("order_created", completeOrder);
+
+        // Start a background task to approve the order after 5 seconds
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(5000); // Wait 5 seconds
+
+            // Update order status to Processing
+            using var scope = scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var orderToUpdate = await dbContext.Orders.FindAsync(order.Id);
+
+            if (orderToUpdate != null)
+            {
+                orderToUpdate.Status = OrderStatus.Processing;
+                await dbContext.SaveChangesAsync();
+
+                // Create a notification for the user
+                var notification = new Notification
+                {
+                    UserId = orderToUpdate.UserId,
+                    Title = "Order Approved!",
+                    Message = $"Your order {orderToUpdate.OrderNumber} has been approved and is now being processed.",
+                    Type = NotificationType.Order,
+                    Priority = NotificationPriority.High,
+                    IsRead = false,
+                    ActionUrl = $"/orders/{orderToUpdate.Id}"
+                };
+
+                dbContext.Notifications.Add(notification);
+                await dbContext.SaveChangesAsync();
+
+                // Publish notification event
+                var sender = scope.ServiceProvider.GetRequiredService<ITopicEventSender>();
+                await sender.SendAsync("notification_received", notification);
+            }
+        });
 
         return new OrderPayload
         {

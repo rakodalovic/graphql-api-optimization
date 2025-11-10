@@ -1,4 +1,42 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useMutation } from '@apollo/client';
+import { gql } from '@apollo/client';
+
+const ADD_TO_CART_MUTATION = gql`
+  mutation AddToCart($input: AddToCartInput!) {
+    addToCart(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+const UPDATE_CART_ITEM_MUTATION = gql`
+  mutation UpdateCartItem($input: UpdateCartItemInput!) {
+    updateCartItem(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+const REMOVE_FROM_CART_MUTATION = gql`
+  mutation RemoveFromCart($input: RemoveFromCartInput!) {
+    removeFromCart(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+const CLEAR_CART_MUTATION = gql`
+  mutation ClearCart($userId: Int!) {
+    clearCart(userId: $userId) {
+      success
+      message
+    }
+  }
+`;
 
 export interface CartItem {
   id: number;
@@ -40,6 +78,10 @@ const CART_STORAGE_KEY = 'shopping_cart';
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [addToCartMutation] = useMutation(ADD_TO_CART_MUTATION);
+  const [updateCartItemMutation] = useMutation(UPDATE_CART_ITEM_MUTATION);
+  const [removeFromCartMutation] = useMutation(REMOVE_FROM_CART_MUTATION);
+  const [clearCartMutation] = useMutation(CLEAR_CART_MUTATION);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -59,44 +101,96 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product: Product) => {
-    setCartItems(currentItems => {
-      const existingItem = currentItems.find(item => item.id === product.id);
-      const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-      
-      if (existingItem) {
-        // If item already exists, increase quantity
-        return currentItems.map(item =>
+  const getUserId = (): number | null => {
+    const storedUser = localStorage.getItem('authUser');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        return parseInt(user.id);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const addToCart = async (product: Product) => {
+    const userId = getUserId();
+    const existingItem = cartItems.find(item => item.id === product.id);
+    const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
+
+    // Update local state
+    if (existingItem) {
+      setCartItems(currentItems =>
+        currentItems.map(item =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
-        );
-      } else {
-        // Add new item to cart
-        const newItem: CartItem = {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-          image: primaryImage?.imageUrl
-        };
-        return [...currentItems, newItem];
+        )
+      );
+    } else {
+      const newItem: CartItem = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image: primaryImage?.imageUrl
+      };
+      setCartItems(currentItems => [...currentItems, newItem]);
+    }
+
+    // Sync with backend if user is logged in
+    if (userId) {
+      try {
+        await addToCartMutation({
+          variables: {
+            input: {
+              userId,
+              productId: product.id,
+              quantity: 1
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error syncing cart with backend:', error);
       }
-    });
+    }
   };
 
-  const removeFromCart = (productId: number) => {
-    setCartItems(currentItems => 
+  const removeFromCart = async (productId: number) => {
+    const userId = getUserId();
+
+    // Update local state
+    setCartItems(currentItems =>
       currentItems.filter(item => item.id !== productId)
     );
+
+    // Sync with backend if user is logged in
+    if (userId) {
+      try {
+        await removeFromCartMutation({
+          variables: {
+            input: {
+              userId,
+              productId
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error syncing cart removal with backend:', error);
+      }
+    }
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = async (productId: number, quantity: number) => {
+    const userId = getUserId();
+
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
 
+    // Update local state
     setCartItems(currentItems =>
       currentItems.map(item =>
         item.id === productId
@@ -104,10 +198,41 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           : item
       )
     );
+
+    // Sync with backend if user is logged in
+    if (userId) {
+      try {
+        await updateCartItemMutation({
+          variables: {
+            input: {
+              userId,
+              productId,
+              quantity
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error syncing cart update with backend:', error);
+      }
+    }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    const userId = getUserId();
+
+    // Update local state
     setCartItems([]);
+
+    // Sync with backend if user is logged in
+    if (userId) {
+      try {
+        await clearCartMutation({
+          variables: { userId }
+        });
+      } catch (error) {
+        console.error('Error syncing cart clear with backend:', error);
+      }
+    }
   };
 
   const getTotalItems = () => {

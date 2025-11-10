@@ -41,7 +41,7 @@ const HomePage: React.FC = () => {
 
   // Handle null data gracefully
   const featuredProducts = data?.products?.nodes || [];
-  
+
   // If data is null but no error occurred, show loading
   if (!data && !loading && !error) {
     return <LoadingSpinner />;
@@ -53,7 +53,7 @@ const HomePage: React.FC = () => {
       <section className="hero-section">
         <div className="hero-content">
           <h1>Welcome to GraphMart</h1>
-          <p>Your premium destination for quality products with lightning-fast performance</p>
+          <p>Your premium destination for fast and effortless product discovery, powered by a high-performance GraphQL server</p>
           <Link to="/catalog" className="cta-button">
             Shop Now
           </Link>
@@ -67,7 +67,7 @@ const HomePage: React.FC = () => {
           <p className="section-subtitle">
             Carefully curated products for the discerning customer
           </p>
-          
+
           {featuredProducts.length > 0 ? (
             <div className="products-grid">
               {featuredProducts.map((product) => (
@@ -79,7 +79,7 @@ const HomePage: React.FC = () => {
               <p>No featured products available at the moment.</p>
             </div>
           )}
-          
+
           <div className="view-all-container">
             <Link to="/catalog" className="view-all-button">
               View All Products
