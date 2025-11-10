@@ -140,21 +140,22 @@ const ProductCatalog: React.FC = () => {
   // Build variables for the selected query
   const queryVariables = isPriceSorting
     ? {
-        where: buildWhereClause(),
-        ascending: sortBy === 'price_asc',
-        first: 24
-      }
+      where: buildWhereClause(),
+      ascending: sortBy === 'price_asc',
+      first: 24
+    }
     : {
-        where: buildWhereClause(),
-        order: getOrderParam(),
-        first: 24
-      };
+      where: buildWhereClause(),
+      order: getOrderParam(),
+      first: 24
+    };
 
   const { loading: productsLoading, error: productsError, data: productsData } = useQuery<ProductsData | ProductsByPriceData>(
     queryToUse,
     {
       variables: queryVariables,
-      fetchPolicy: 'cache-and-network'
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true
     }
   );
 
@@ -166,15 +167,17 @@ const ProductCatalog: React.FC = () => {
   const products: Product[] = isPriceSorting
     ? (productsData as ProductsByPriceData)?.productsByPrice?.nodes || []
     : (productsData as ProductsData)?.products?.nodes || [];
-  const categories = categoriesData?.categories?.nodes || [];
+
+  // Filter out parent categories that have subcategories
+  // Keep only leaf categories (those without subcategories or with empty subcategories array)
+  const allCategories = categoriesData?.categories?.nodes || [];
+  const categories = allCategories.filter(cat =>
+    !cat.subCategories || cat.subCategories.length === 0
+  );
+
   const totalCount = isPriceSorting
     ? (productsData as ProductsByPriceData)?.productsByPrice?.totalCount || 0
     : (productsData as ProductsData)?.products?.totalCount || 0;
-  
-  // Handle null data gracefully
-  if (!productsData && !productsLoading && !productsError) {
-    return <LoadingSpinner />;
-  }
 
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
@@ -196,11 +199,14 @@ const ProductCatalog: React.FC = () => {
     setSortBy('name_asc');
   };
 
-  if (productsLoading && !productsData) return <LoadingSpinner />;
-  if (productsError) return <ErrorMessage message={productsError.message} />;
-
   return (
     <div className="product-catalog">
+      {/* Show error banner if there's an error */}
+      {productsError && !productsData && (
+        <div style={{ padding: '20px' }}>
+          <ErrorMessage message={productsError.message} />
+        </div>
+      )}
       <div className="catalog-header">
         <div className="container">
           <h1>Product Catalog</h1>
@@ -226,13 +232,13 @@ const ProductCatalog: React.FC = () => {
                 <div className="search-container">
                   <input
                     type="text"
-                    placeholder="Search products... (Press Enter to search)"
+                    placeholder="Search products..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleSearchKeyPress}
+                    onKeyDown={handleSearchKeyPress}
                     className="search-input"
                   />
-                  <button 
+                  <button
                     onClick={handleSearchSubmit}
                     className="search-button"
                     type="button"
@@ -337,18 +343,37 @@ const ProductCatalog: React.FC = () => {
               </div>
 
               {/* Products Grid/List */}
-              {products.length > 0 ? (
-                <div className={`products-container ${viewMode}`}>
-                  {products.map((product: Product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                <div className="no-products">
-                  <h3>No products found</h3>
-                  <p>Try adjusting your filters or search terms.</p>
-                </div>
-              )}
+              <div className="products-section" style={{ position: 'relative', minHeight: '400px' }}>
+                {productsLoading && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    borderRadius: '8px'
+                  }}>
+                    <LoadingSpinner />
+                  </div>
+                )}
+                {!productsLoading && products.length === 0 ? (
+                  <div className="no-products">
+                    <h3>No products found</h3>
+                    <p>Try adjusting your filters or search terms.</p>
+                  </div>
+                ) : (
+                  <div className={`products-container ${viewMode}`} style={{ opacity: productsLoading ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                    {products.map((product: Product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </main>
           </div>
         </div>
