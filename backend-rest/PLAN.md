@@ -210,7 +210,7 @@ query {
 │  │ [Code View]      │ [Code View]      │       │
 │  └──────────────────┴──────────────────┘       │
 │                                                 │
-│  📊 Visual Comparison                           │
+│  Visual Comparison                           │
 │  [Bar Chart showing metrics]                    │
 │                                                 │
 │  [Run Test] [Reset]                             │
@@ -218,11 +218,11 @@ query {
 ```
 
 ### Metrics Display
-- ⏱️ Response Time (ms)
-- 📦 Payload Size (bytes/KB)
-- 🔢 Request Count
-- 📊 Efficiency Score (% improvement)
-- 🌐 Network Waterfall (visual timeline)
+- Response Time (ms)
+- Payload Size (bytes/KB)
+- Request Count
+- Efficiency Score (% improvement)
+- Network Waterfall (visual timeline)
 
 ### Code Display
 - Show actual HTTP requests for REST
